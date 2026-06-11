@@ -1,0 +1,13 @@
+### 1. Base Match Outcome Prediction
+* **Correct Outcome (Win/Draw/Loss):** You earn **+3 points**.
+* **Incorrect Outcome:** You earn **0 points**.
+
+### 2. Advanced Score Prediction (Optional)
+If you check the box to predict goals, the following calculation applies:
+* **Home Team Goals Correct:** You earn **+2 points**.
+* **Home Team Goals Incorrect:** You earn **-1 point**.
+* **Away Team Goals Correct:** You earn **+2 points**.
+* **Away Team Goals Incorrect:** You earn **-1 point**.
+
+### Special Perfect Score Bonus
+* If you predict **both** the home and away goals perfectly correct, you receive a flat **+5 points** bonus instead of 4 points.
