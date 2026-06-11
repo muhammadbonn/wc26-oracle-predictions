@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from scripts.data_provider import load_matches
 from scripts.utils import get_team_flag, calculate_score, get_match_round
 
@@ -80,7 +80,10 @@ else:
 
     with tab1:
         st.header("Upcoming Matches")
-        current_time = datetime.now()
+        
+        # Calculate precise Egypt Time (UTC + 3) to ensure exact lock timing on cloud servers
+        current_utc_time = datetime.now(timezone.utc)
+        current_egypt_time = current_utc_time.replace(tzinfo=None) + timedelta(hours=3)
         
         my_preds = get_user_predictions(conn, st.session_state.username)
         pred_dict = {str(row['match_id']): {
@@ -100,7 +103,7 @@ else:
                 st.markdown(f"## {round_name}")
                 
                 for date_str, date_group in round_group.groupby('date_group', sort=False):
-                    st.markdown(f"#### {date_str}")
+                    st.markdown(f"#### {date_str} (Egypt Time)")
                     
                     for index, row in date_group.iterrows():
                         match_id = str(row['match_id'])
@@ -108,9 +111,31 @@ else:
                         away = row['away_team']
                         m_time = row['match_time']
                         
-                        # Close and hide form view dynamically when current time passes kickoff time
-                        if current_time < m_time:
-                            with st.expander(f"{home} vs {away} ({m_time.strftime('%H:%M')})"):
+                        # Close and hide form view dynamically when current Egypt time passes kickoff time
+                        if current_egypt_time < m_time:
+                            with st.expander(f"{home} vs {away} ({m_time.strftime('%H:%M')} Egypt Time)"):
+                                
+                                # Fetch flags early for the UI banner
+                                home_flag = get_team_flag(home) or "https://via.placeholder.com/80x50.png?text=Flag"
+                                away_flag = get_team_flag(away) or "https://via.placeholder.com/80x50.png?text=Flag"
+                                
+                                # OneFootball Style Scoreboard HTML Injection
+                                scoreboard_html = f"""
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background-color: #262730; border-radius: 10px; margin-bottom: 20px;">
+                                    <div style="text-align: center; width: 33%;">
+                                        <img src="{home_flag}" width="60" style="border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                                        <p style="margin: 10px 0 0 0; font-weight: bold; font-size: 16px; color: white;">{home}</p>
+                                    </div>
+                                    <div style="text-align: center; width: 33%;">
+                                        <p style="margin: 0; font-size: 24px; font-weight: 900; color: #888;">VS</p>
+                                    </div>
+                                    <div style="text-align: center; width: 33%;">
+                                        <img src="{away_flag}" width="60" style="border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                                        <p style="margin: 10px 0 0 0; font-weight: bold; font-size: 16px; color: white;">{away}</p>
+                                    </div>
+                                </div>
+                                """
+                                st.markdown(scoreboard_html, unsafe_allow_html=True)
                                 
                                 saved_po = pred_dict.get(match_id, {}).get('predicted_outcome')
                                 po_options = ["home", "draw", "away"]
@@ -141,14 +166,8 @@ else:
                                     default_away = pred_dict.get(match_id, {}).get('away_score', 0)
                                     
                                     with col1:
-                                        home_flag = get_team_flag(home)
-                                        if home_flag:
-                                            st.image(home_flag, width=50)
                                         pred_home = st.number_input(f"{home} Goals", min_value=0, step=1, value=int(default_home if default_home is not None else 0), key=f"h_{match_id}")
                                     with col2:
-                                        away_flag = get_team_flag(away)
-                                        if away_flag:
-                                            st.image(away_flag, width=50)
                                         pred_away = st.number_input(f"{away} Goals", min_value=0, step=1, value=int(default_away if default_away is not None else 0), key=f"a_{match_id}")
                                 
                                 # Dynamic state action label configuration
@@ -175,7 +194,7 @@ else:
             p_away = pred['away_score']
             
             if uname not in leaderboard:
-                leaderboard[uname] = {"Username": uname, "Total Points": 0, "Correct Outcomes": 0, "Matches Predicted": 0}
+                leaderboard[uname] = {"Username": uname, "Total Points": 0, "Correct Picks": 0, "Matches Predicted": 0}
             
             match_row = matches_df[matches_df['match_id'].astype(str) == m_id]
             if not match_row.empty:
@@ -186,7 +205,7 @@ else:
                     pts, is_correct = calculate_score(p_outcome, p_goals_enabled, p_home, p_away, actual_h, actual_a)
                     leaderboard[uname]["Total Points"] += pts
                     if is_correct:
-                        leaderboard[uname]["Correct Outcomes"] += 1
+                        leaderboard[uname]["Correct Picks"] += 1
                         
             leaderboard[uname]["Matches Predicted"] += 1
 
@@ -200,18 +219,9 @@ else:
 
     with tab3:
         st.header("Tournament Point System & Rules")
-        st.markdown("""
-        ### 1. Base Match Outcome Prediction
-        * **Correct Outcome (Win/Draw/Loss):** You earn **+3 points**.
-        * **Incorrect Outcome:** You earn **0 points**.
-        
-        ### 2. Advanced Score Prediction (Optional)
-        If you check the box to predict goals, the following calculation applies:
-        * **Home Team Goals Correct:** You earn **+2 points**.
-        * **Home Team Goals Incorrect:** You earn **-1 point**.
-        * **Away Team Goals Correct:** You earn **+2 points**.
-        * **Away Team Goals Incorrect:** You earn **-1 point**.
-        
-        ### Special Perfect Score Bonus
-        * If you predict **both** the home and away goals perfectly correct, you receive a flat **+5 points** bonus instead of 4 points.
-        """)
+        try:
+            with open("data/rules.txt", "r", encoding="utf-8") as f:
+                rules_markdown = f.read()
+            st.markdown(rules_markdown)
+        except Exception as e:
+            st.error(f"Error loading tournament rules: {e}")
