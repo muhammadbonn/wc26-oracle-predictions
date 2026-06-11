@@ -1,45 +1,22 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from sqlalchemy import text
+from scripts.data_provider import load_matches
+from scripts.utils import get_team_flag, calculate_score
+from scripts.db_helpers import check_user, create_user, get_user_predictions, save_user_prediction, get_all_predictions
 
 # Page configuration
 st.set_page_config(page_title="World Cup 2026 Predictions", page_icon="⚽", layout="wide")
 
-# Initialize database connection using Streamlit secure secrets
+# Initialize database connection using Supabase URI
+db_url = "postgresql://postgres.pjopqzmxaapwmfootrcb:3EK.tt9z_B$9b$G@aws-0-eu-west-3.pooler.supabase.com:5432/postgres"
+
 try:
-    conn = st.connection("supabase", type="sql")
+    conn = st.connection("supabase", type="sql", url=db_url)
 except Exception as e:
     st.error(f"Database connection error: {e}")
 
-# GitHub CSV URL for matches data
-CSV_URL = "https://raw.githubusercontent.com/muhammadbonn/wc26-data-stats/main/data/wc26_matches.csv"
-
-@st.cache_data(ttl=600)
-def load_matches():
-    try:
-        df = pd.read_csv(CSV_URL)
-        df['match_time'] = pd.to_datetime(df['match_time'])
-        return df
-    except Exception as e:
-        st.error(f"Error loading matches: {e}")
-        return pd.DataFrame()
-
-def calculate_score(pred_home, pred_away, actual_home, actual_away):
-    if pd.isna(actual_home) or pd.isna(actual_away):
-        return 0
-    actual_home, actual_away = int(actual_home), int(actual_away)
-    
-    pred_result = "home" if pred_home > pred_away else "away" if pred_away > pred_home else "draw"
-    actual_result = "home" if actual_home > actual_away else "away" if actual_away > actual_home else "draw"
-    
-    points = 0
-    if pred_result == actual_result:
-        points += 3 # Points for predicting the correct outcome (win/draw)
-        if pred_home == actual_home and pred_away == actual_away:
-            points += 5 # Bonus points for predicting the exact score
-    return points
-
+# Load matches using local data provider configuration
 matches_df = load_matches()
 
 # Session state initialization for login tracking
@@ -52,19 +29,14 @@ st.title("⚽ World Cup 2026 Predictions Tournament")
 if not st.session_state.logged_in:
     st.subheader("Authentication / Registration")
     username = st.text_input("Username").strip()
-    
-    # Enforce a maximum of 6 characters for the PIN
     pin = st.text_input("Secret PIN (6 Digits)", type="password", max_chars=6)
     
     if st.button("Submit"):
         if username and pin:
-            # Validate PIN format strictly (must be numeric and exactly 6 digits)
             if not (pin.isdigit() and len(pin) == 6):
                 st.error("❌ PIN must consist of exactly 6 numeric digits (e.g., 123456).")
             else:
-                # Query database to check if user already exists
-                user_check = conn.query("SELECT * FROM users WHERE username = :u", params={"u": username})
-                
+                user_check = check_user(conn, username)
                 if not user_check.empty:
                     if user_check.iloc[0]['pin'] == pin:
                         st.session_state.logged_in = True
@@ -73,10 +45,7 @@ if not st.session_state.logged_in:
                     else:
                         st.error("❌ Invalid PIN. Please try again.")
                 else:
-                    # Register new account with verified 6-digit PIN
-                    with conn.session as session:
-                        session.execute(text("INSERT INTO users (username, pin) VALUES (:u, :p)"), {"u": username, "p": pin})
-                        session.commit()
+                    create_user(conn, username, pin)
                     st.session_state.logged_in = True
                     st.session_state.username = username
                     st.success("🎉 Account created successfully. Welcome to the tournament.")
@@ -96,8 +65,7 @@ else:
         st.header("Upcoming Matches")
         current_time = datetime.now()
         
-        # Retrieve existing predictions for the logged-in user
-        my_preds = conn.query("SELECT match_id, home_score, away_score FROM predictions WHERE username = :u", params={"u": st.session_state.username})
+        my_preds = get_user_predictions(conn, st.session_state.username)
         pred_dict = {str(row['match_id']): {'home': row['home_score'], 'away': row['away_score']} for _, row in my_preds.iterrows()}
 
         if not matches_df.empty:
@@ -107,7 +75,6 @@ else:
                 away = row['away_team']
                 m_time = row['match_time']
                 
-                # Check if the match has not started yet to allow predictions or updates
                 if current_time < m_time:
                     with st.expander(f"🕒 {home} vs {away} - {m_time.strftime('%Y-%m-%d %H:%M')}"):
                         col1, col2 = st.columns(2)
@@ -115,29 +82,26 @@ else:
                         default_home = pred_dict.get(match_id, {}).get('home', 0)
                         default_away = pred_dict.get(match_id, {}).get('away', 0)
                         
+                        home_flag = get_team_flag(home)
+                        away_flag = get_team_flag(away)
+                        
                         with col1:
+                            if home_flag:
+                                st.image(home_flag, width=60)
                             pred_home = st.number_input(f"{home} Score", min_value=0, step=1, value=default_home, key=f"h_{match_id}")
                         with col2:
+                            if away_flag:
+                                st.image(away_flag, width=60)
                             pred_away = st.number_input(f"{away} Score", min_value=0, step=1, value=default_away, key=f"a_{match_id}")
                                 
                         if st.button("Save Prediction", key=f"btn_{match_id}"):
-                            with conn.session as session:
-                                query = text("""
-                                    INSERT INTO predictions (username, match_id, home_score, away_score) 
-                                    VALUES (:u, :m, :h, :a) 
-                                    ON CONFLICT (username, match_id) 
-                                    DO UPDATE SET home_score = :h, away_score = :a;
-                                """)
-                                session.execute(query, {"u": st.session_state.username, "m": match_id, "h": pred_home, "a": pred_away})
-                                session.commit()
+                            save_user_prediction(conn, st.session_state.username, match_id, pred_home, pred_away)
                             st.success("Prediction saved successfully.")
                             st.rerun()
 
     with tab2:
         st.header("Leaderboard Standings")
-        
-        # Load all predictions recorded in the database
-        all_preds = conn.query("SELECT * FROM predictions")
+        all_preds = get_all_predictions(conn)
         
         leaderboard = {}
         for _, pred in all_preds.iterrows():
@@ -149,13 +113,11 @@ else:
             if uname not in leaderboard:
                 leaderboard[uname] = {"Username": uname, "Total Points": 0, "Correct Picks": 0, "Matches Predicted": 0}
             
-            # Match current record database data with real-time GitHub CSV actual data
             match_row = matches_df[matches_df['match_id'].astype(str) == m_id]
             if not match_row.empty:
                 actual_h = match_row.iloc[0].get('actual_home_score')
                 actual_a = match_row.iloc[0].get('actual_away_score')
                 
-                # Verify that the actual match outcome is published in CSV
                 if pd.notna(actual_h) and pd.notna(actual_a):
                     pts = calculate_score(p_home, p_away, actual_h, actual_a)
                     leaderboard[uname]["Total Points"] += pts
