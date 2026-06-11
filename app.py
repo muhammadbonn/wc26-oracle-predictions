@@ -27,7 +27,7 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
 
-st.title("World Cup 2026 Predictions Tournament")
+st.title("World Cup 2026 - Tournament Oracle")
 
 if not st.session_state.logged_in:
     st.subheader("Authentication")
