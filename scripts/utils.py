@@ -21,17 +21,34 @@ def get_team_flag(team_name):
         return f"https://flagcdn.com/w80/{code}.png"
     return None
 
-def calculate_score(pred_home, pred_away, actual_home, actual_away):
+def calculate_score(pred_outcome, predict_goals, pred_home, pred_away, actual_home, actual_away):
     if pd.isna(actual_home) or pd.isna(actual_away):
         return 0
     actual_home, actual_away = int(actual_home), int(actual_away)
     
-    pred_result = "home" if pred_home > pred_away else "away" if pred_away > pred_home else "draw"
-    actual_result = "home" if actual_home > actual_away else "away" if actual_away > actual_home else "draw"
+    # Determine the actual match outcome
+    if actual_home > actual_away:
+        actual_outcome = "home"
+    elif actual_away > actual_home:
+        actual_outcome = "away"
+    else:
+        actual_outcome = "draw"
     
     points = 0
-    if pred_result == actual_result:
-        points += 3 # Points for predicting the correct outcome (win/draw)
-        if pred_home == actual_home and pred_away == actual_away:
-            points += 5 # Bonus points for predicting the exact score
+    
+    # Base rule: +3 points for correct match outcome prediction
+    if pred_outcome == actual_outcome:
+        points += 3
+        
+    # Optional advanced rule: Predict exact goals per team (High Risk / Reward)
+    if predict_goals:
+        home_correct = (pred_home == actual_home)
+        away_correct = (pred_away == actual_away)
+        
+        if home_correct and away_correct:
+            points += 5 # Special bonus instead of 4 points if both are correct
+        else:
+            points += 2 if home_correct else -1
+            points += 2 if away_correct else -1
+            
     return points
