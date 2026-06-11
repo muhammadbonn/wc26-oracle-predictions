@@ -6,11 +6,9 @@ from sqlalchemy import text
 # Page configuration
 st.set_page_config(page_title="World Cup 2026 Predictions", page_icon="⚽", layout="wide")
 
-# Initialize database connection using Supabase URI
-db_url = "postgresql://postgres.pjopqzmxaapwmfootrcb:3EK.tt9z_B$9b$G@aws-0-eu-west-3.pooler.supabase.com:5432/postgres"
-
+# Initialize database connection using Streamlit secure secrets
 try:
-    conn = st.connection("supabase", type="sql", url=db_url)
+    conn = st.connection("supabase", type="sql")
 except Exception as e:
     st.error(f"Database connection error: {e}")
 
