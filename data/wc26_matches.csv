@@ -8,9 +8,9 @@ match_id,match_time,home_team,away_team,team_1_code,team_2_code,venue,actual_hom
 5,2026-06-14 04:00:00,Haiti,Scotland,C3,C4,Boston,0,1
 6,2026-06-14 07:00:00,Australia,Turkey,D3,D4,Vancouver,2,0
 10,2026-06-14 20:00:00,Germany,Curaçao,E1,E2,Houston,7,1
-11,2026-06-14 23:00:00,Netherlands,Japan,F1,F2,Dallas,,
-9,2026-06-15 02:00:00,Ivory Coast,Ecuador,E3,E4,Philadelphia,,
-12,2026-06-15 05:00:00,Sweden,Tunisia,F3,F4,Monterrey,,
+11,2026-06-14 23:00:00,Netherlands,Japan,F1,F2,Dallas,2,2
+9,2026-06-15 02:00:00,Ivory Coast,Ecuador,E3,E4,Philadelphia,1,0
+12,2026-06-15 05:00:00,Sweden,Tunisia,F3,F4,Monterrey,5,1
 14,2026-06-15 19:00:00,Spain,Cape Verde,H1,H2,Atlanta,,
 16,2026-06-15 22:00:00,Belgium,Egypt,G1,G2,Seattle,,
 13,2026-06-16 01:00:00,Saudi Arabia,Uruguay,H3,H4,Miami,,
