@@ -11,8 +11,8 @@ match_id,match_time,home_team,away_team,team_1_code,team_2_code,venue,actual_hom
 11,2026-06-14 23:00:00,Netherlands,Japan,F1,F2,Dallas,2,2
 9,2026-06-15 02:00:00,Ivory Coast,Ecuador,E3,E4,Philadelphia,1,0
 12,2026-06-15 05:00:00,Sweden,Tunisia,F3,F4,Monterrey,5,1
-14,2026-06-15 19:00:00,Spain,Cape Verde,H1,H2,Atlanta,,
-16,2026-06-15 22:00:00,Belgium,Egypt,G1,G2,Seattle,,
+14,2026-06-15 19:00:00,Spain,Cape Verde,H1,H2,Atlanta,0,0
+16,2026-06-15 22:00:00,Belgium,Egypt,G1,G2,Seattle,1,1
 13,2026-06-16 01:00:00,Saudi Arabia,Uruguay,H3,H4,Miami,,
 15,2026-06-16 04:00:00,IR Iran,New Zealand,G3,G4,Los Angeles,,
 17,2026-06-16 22:00:00,France,Senegal,I1,I2,New York/New Jersey,,
