@@ -62,153 +62,152 @@ else:
 
     st.info("Note: All match times and dates are displayed in Egypt Standard Time.")
     
-    tab1, tab2, tab3 = st.tabs(["Matches & Predictions", "Leaderboard", "Tournament Rules"])
+    # 4 distinct tabs
+    tab1, tab2, tab3, tab4 = st.tabs(["Upcoming Matches", "Match History", "Leaderboard", "Tournament Rules"])
 
-    with tab1:
-        current_egypt_time = pd.Timestamp.now() + pd.Timedelta(hours=3)
-        my_preds = get_user_predictions(conn, st.session_state.username)
+    current_egypt_time = pd.Timestamp.now() + pd.Timedelta(hours=3)
+    my_preds = get_user_predictions(conn, st.session_state.username)
+    
+    pred_dict = {str(row['match_id']): {
+        'predicted_outcome': row['predicted_outcome'],
+        'predict_goals': row['predict_goals'],
+        'home_score': row['home_score'],
+        'away_score': row['away_score']
+    } for _, row in my_preds.iterrows()}
+
+    if not matches_df.empty:
+        matches_df['round_name'] = matches_df['match_id'].apply(get_match_round)
+        matches_df['date_group'] = matches_df['match_time'].dt.strftime('%A - %B %d, %Y')
         
-        pred_dict = {str(row['match_id']): {
-            'predicted_outcome': row['predicted_outcome'],
-            'predict_goals': row['predict_goals'],
-            'home_score': row['home_score'],
-            'away_score': row['away_score']
-        } for _, row in my_preds.iterrows()}
+        upcoming_df = matches_df[matches_df['match_time'] > current_egypt_time].sort_values(by='match_time')
+        past_df = matches_df[matches_df['match_time'] <= current_egypt_time].sort_values(by='match_time', ascending=False)
 
-        if not matches_df.empty:
-            matches_df['round_name'] = matches_df['match_id'].apply(get_match_round)
-            matches_df['date_group'] = matches_df['match_time'].dt.strftime('%A - %B %d, %Y')
-            
-            # Split dataframe into Upcoming and Past matches
-            upcoming_df = matches_df[matches_df['match_time'] > current_egypt_time].sort_values(by='match_time')
-            # Sort past matches descending so the most recently finished match is at the top of the past section
-            past_df = matches_df[matches_df['match_time'] <= current_egypt_time].sort_values(by='match_time', ascending=False)
-
-            # --- SECTION 1: UPCOMING MATCHES ---
+        # --- TAB 1: UPCOMING MATCHES ---
+        with tab1:
             st.header("Upcoming Matches")
             if not upcoming_df.empty:
-                first_upcoming_found = False
+                first_round = True
                 for round_name, round_group in upcoming_df.groupby('round_name', sort=False):
-                    st.markdown(f"### {round_name}")
-                    for date_str, date_group in round_group.groupby('date_group', sort=False):
-                        st.markdown(f"#### {date_str}")
-                        for _, row in date_group.iterrows():
-                            match_id = str(row['match_id'])
-                            home = row['home_team'] if pd.notna(row['home_team']) else "TBD"
-                            away = row['away_team'] if pd.notna(row['away_team']) else "TBD"
-                            m_time = row['match_time']
-                            
-                            home_flag = get_team_flag(home) or "https://via.placeholder.com/80x50.png?text=Flag"
-                            away_flag = get_team_flag(away) or "https://via.placeholder.com/80x50.png?text=Flag"
-                            
-                            # Standard Scoreboard for upcoming (shows VS)
-                            scoreboard_html = f"""
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background-color: #262730; border-radius: 10px; margin-bottom: 20px;">
-                                <div style="text-align: center; width: 33%;"><img src="{home_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{home}</p></div>
-                                <div style="text-align: center; width: 33%;"><p style="margin: 0; color: #888; font-size:24px; font-weight:bold;">VS</p></div>
-                                <div style="text-align: center; width: 33%;"><img src="{away_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{away}</p></div>
-                            </div>
-                            """
-                            
-                            is_first = not first_upcoming_found
-                            if is_first:
-                                first_upcoming_found = True
+                    # Wrap Gameweeks/Rounds in an expander
+                    with st.expander(round_name, expanded=first_round):
+                        first_round = False
+                        first_upcoming_found = False
+                        
+                        for date_str, date_group in round_group.groupby('date_group', sort=False):
+                            st.markdown(f"#### {date_str}")
+                            for _, row in date_group.iterrows():
+                                match_id = str(row['match_id'])
+                                home = row['home_team'] if pd.notna(row['home_team']) else "TBD"
+                                away = row['away_team'] if pd.notna(row['away_team']) else "TBD"
+                                m_time = row['match_time']
                                 
-                            with st.expander(f"[Upcoming] {home} vs {away} ({m_time.strftime('%H:%M')})", expanded=is_first):
-                                st.markdown(scoreboard_html, unsafe_allow_html=True)
+                                home_flag = get_team_flag(home) or "https://via.placeholder.com/80x50.png?text=Flag"
+                                away_flag = get_team_flag(away) or "https://via.placeholder.com/80x50.png?text=Flag"
                                 
-                                outcome_options = [f"{home} Win", "Draw", f"{away} Win"]
-                                saved_po = pred_dict.get(match_id, {}).get('predicted_outcome')
-                                default_idx = outcome_options.index(f"{home} Win" if saved_po == 'home' else f"{away} Win" if saved_po == 'away' else "Draw") if saved_po else 0
+                                scoreboard_html = f"""
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background-color: #262730; border-radius: 10px; margin-bottom: 20px;">
+                                    <div style="text-align: center; width: 33%;"><img src="{home_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{home}</p></div>
+                                    <div style="text-align: center; width: 33%;"><p style="margin: 0; color: #888; font-size:24px; font-weight:bold;">VS</p></div>
+                                    <div style="text-align: center; width: 33%;"><img src="{away_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{away}</p></div>
+                                </div>
+                                """
                                 
-                                outcome_label = st.radio("Select Outcome (+3 Points):", outcome_options, index=default_idx, horizontal=True, key=f"out_{match_id}")
-                                predicted_outcome = "home" if outcome_label == f"{home} Win" else "away" if outcome_label == f"{away} Win" else "draw"
-                                
-                                saved_pg = pred_dict.get(match_id, {}).get('predict_goals', False)
-                                predict_goals = st.checkbox("Activate Advanced Score Prediction", value=bool(saved_pg), key=f"ch_{match_id}")
-                                
-                                pred_home, pred_away = 0, 0
-                                if predict_goals:
-                                    col1, col2 = st.columns(2)
-                                    default_h = pred_dict.get(match_id, {}).get('home_score', 0)
-                                    default_a = pred_dict.get(match_id, {}).get('away_score', 0)
-                                    pred_home = col1.number_input(f"{home} Goals", min_value=0, step=1, value=int(default_h if pd.notna(default_h) else 0), key=f"h_{match_id}")
-                                    pred_away = col2.number_input(f"{away} Goals", min_value=0, step=1, value=int(default_a if pd.notna(default_a) else 0), key=f"a_{match_id}")
-                                
-                                btn_text = "Update Prediction" if match_id in pred_dict else "Save Prediction"
-                                if st.button(btn_text, key=f"btn_{match_id}"):
-                                    save_user_prediction(conn, st.session_state.username, match_id, predicted_outcome, predict_goals, pred_home, pred_away)
-                                    st.success("Prediction saved securely.")
-                                    st.rerun()
+                                is_first = not first_upcoming_found
+                                if is_first:
+                                    first_upcoming_found = True
+                                    
+                                with st.expander(f"{home} vs {away} ({m_time.strftime('%H:%M')})", expanded=is_first):
+                                    st.markdown(scoreboard_html, unsafe_allow_html=True)
+                                    
+                                    outcome_options = [f"{home} Win", "Draw", f"{away} Win"]
+                                    saved_po = pred_dict.get(match_id, {}).get('predicted_outcome')
+                                    default_idx = outcome_options.index(f"{home} Win" if saved_po == 'home' else f"{away} Win" if saved_po == 'away' else "Draw") if saved_po else 0
+                                    
+                                    outcome_label = st.radio("Select Outcome (+3 Points):", outcome_options, index=default_idx, horizontal=True, key=f"out_{match_id}")
+                                    predicted_outcome = "home" if outcome_label == f"{home} Win" else "away" if outcome_label == f"{away} Win" else "draw"
+                                    
+                                    saved_pg = pred_dict.get(match_id, {}).get('predict_goals', False)
+                                    predict_goals = st.checkbox("Activate Advanced Score Prediction", value=bool(saved_pg), key=f"ch_{match_id}")
+                                    
+                                    pred_home, pred_away = 0, 0
+                                    if predict_goals:
+                                        col1, col2 = st.columns(2)
+                                        default_h = pred_dict.get(match_id, {}).get('home_score', 0)
+                                        default_a = pred_dict.get(match_id, {}).get('away_score', 0)
+                                        pred_home = col1.number_input(f"{home} Goals", min_value=0, step=1, value=int(default_h if pd.notna(default_h) else 0), key=f"h_{match_id}")
+                                        pred_away = col2.number_input(f"{away} Goals", min_value=0, step=1, value=int(default_a if pd.notna(default_a) else 0), key=f"a_{match_id}")
+                                    
+                                    btn_text = "Update Prediction" if match_id in pred_dict else "Save Prediction"
+                                    if st.button(btn_text, key=f"btn_{match_id}"):
+                                        save_user_prediction(conn, st.session_state.username, match_id, predicted_outcome, predict_goals, pred_home, pred_away)
+                                        st.success("Prediction saved securely.")
+                                        st.rerun()
             else:
                 st.info("No upcoming matches available.")
 
-            st.markdown("---")
-            
-            # --- SECTION 2: PAST MATCHES ---
-            st.header("Past Matches & Results")
+        # --- TAB 2: MATCH HISTORY ---
+        with tab2:
+            st.header("Match History")
             if not past_df.empty:
                 for round_name, round_group in past_df.groupby('round_name', sort=False):
-                    st.markdown(f"### {round_name}")
-                    for date_str, date_group in round_group.groupby('date_group', sort=False):
-                        st.markdown(f"#### {date_str}")
-                        for _, row in date_group.iterrows():
-                            match_id = str(row['match_id'])
-                            home = row['home_team'] if pd.notna(row['home_team']) else "TBD"
-                            away = row['away_team'] if pd.notna(row['away_team']) else "TBD"
-                            m_time = row['match_time']
-                            
-                            home_flag = get_team_flag(home) or "https://via.placeholder.com/80x50.png?text=Flag"
-                            away_flag = get_team_flag(away) or "https://via.placeholder.com/80x50.png?text=Flag"
-                            
-                            actual_h = row.get('actual_home_score')
-                            actual_a = row.get('actual_away_score')
-                            
-                            # Dynamic middle section for Scoreboard
-                            if pd.notna(actual_h) and pd.notna(actual_a):
-                                mid_html = f'<p style="margin: 0; color: #4CAF50; font-size:36px; font-weight:900;">{int(actual_h)} - {int(actual_a)}</p>'
-                            else:
-                                mid_html = '<p style="margin: 0; color: #FFA500; font-size:24px; font-weight:bold;">TBD</p>'
-                            
-                            scoreboard_html = f"""
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background-color: #262730; border-radius: 10px; margin-bottom: 20px;">
-                                <div style="text-align: center; width: 33%;"><img src="{home_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{home}</p></div>
-                                <div style="text-align: center; width: 33%;">{mid_html}</div>
-                                <div style="text-align: center; width: 33%;"><img src="{away_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{away}</p></div>
-                            </div>
-                            """
-                            
-                            with st.expander(f"[Locked] {home} vs {away} ({m_time.strftime('%H:%M')})", expanded=False):
-                                st.markdown(scoreboard_html, unsafe_allow_html=True)
+                    with st.expander(round_name, expanded=False):
+                        for date_str, date_group in round_group.groupby('date_group', sort=False):
+                            st.markdown(f"#### {date_str}")
+                            for _, row in date_group.iterrows():
+                                match_id = str(row['match_id'])
+                                home = row['home_team'] if pd.notna(row['home_team']) else "TBD"
+                                away = row['away_team'] if pd.notna(row['away_team']) else "TBD"
+                                m_time = row['match_time']
                                 
-                                saved_data = pred_dict.get(match_id)
+                                home_flag = get_team_flag(home) or "https://via.placeholder.com/80x50.png?text=Flag"
+                                away_flag = get_team_flag(away) or "https://via.placeholder.com/80x50.png?text=Flag"
                                 
-                                col1, col2 = st.columns(2)
+                                actual_h = row.get('actual_home_score')
+                                actual_a = row.get('actual_away_score')
                                 
-                                with col1:
-                                    st.markdown("**Your Prediction:**")
+                                if pd.notna(actual_h) and pd.notna(actual_a):
+                                    mid_html = f'<p style="margin: 0; color: #4CAF50; font-size:36px; font-weight:900;">{int(actual_h)} - {int(actual_a)}</p>'
+                                else:
+                                    mid_html = '<p style="margin: 0; color: #FFA500; font-size:24px; font-weight:bold;">TBD</p>'
+                                
+                                scoreboard_html = f"""
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background-color: #262730; border-radius: 10px; margin-bottom: 20px;">
+                                    <div style="text-align: center; width: 33%;"><img src="{home_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{home}</p></div>
+                                    <div style="text-align: center; width: 33%;">{mid_html}</div>
+                                    <div style="text-align: center; width: 33%;"><img src="{away_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{away}</p></div>
+                                </div>
+                                """
+                                
+                                with st.expander(f"{home} vs {away} ({m_time.strftime('%H:%M')})", expanded=False):
+                                    st.markdown(scoreboard_html, unsafe_allow_html=True)
+                                    
+                                    saved_data = pred_dict.get(match_id)
+                                    
+                                    st.markdown("### Your Prediction Summary")
                                     if saved_data:
                                         po = saved_data.get('predicted_outcome')
                                         po_text = f"{home} Win" if po == 'home' else f"{away} Win" if po == 'away' else "Draw"
-                                        st.info(f"Outcome: {po_text}")
+                                        st.write(f"**Predicted Outcome:** Yes ({po_text})")
                                         
                                         if saved_data.get('predict_goals'):
-                                            st.info(f"Score: {int(saved_data.get('home_score', 0))} - {int(saved_data.get('away_score', 0))}")
-                                    else:
-                                        st.warning("No prediction submitted.")
-                                        
-                                with col2:
-                                    st.markdown("**Points Earned:**")
-                                    if saved_data:
+                                            st.write(f"**Predicted Goals:** Yes ({int(saved_data.get('home_score', 0))} - {int(saved_data.get('away_score', 0))})")
+                                        else:
+                                            st.write("**Predicted Goals:** No")
+                                            
                                         if pd.notna(actual_h) and pd.notna(actual_a):
                                             pts, _ = calculate_score(po, saved_data.get('predict_goals'), saved_data.get('home_score'), saved_data.get('away_score'), actual_h, actual_a)
-                                            st.success(f"+{pts} Points")
+                                            st.write(f"**Points Earned:** +{pts}")
                                         else:
-                                            st.warning("Waiting for official results...")
+                                            st.write("**Points Earned:** Waiting for official match results...")
                                     else:
-                                        st.error("0 Points")
+                                        st.write("**Predicted Outcome:** No")
+                                        st.write("**Predicted Goals:** No")
+                                        st.write("**Points Earned:** 0")
+            else:
+                st.info("No past matches yet.")
 
-    with tab2:
+    # --- TAB 3: LEADERBOARD ---
+    with tab3:
         st.header("Leaderboard Standings")
         all_preds = get_all_predictions(conn)
         
@@ -222,30 +221,45 @@ else:
             p_away = pred['away_score']
             
             if uname not in leaderboard:
-                leaderboard[uname] = {"Username": uname, "Total Points": 0, "Correct Picks": 0, "Matches Predicted": 0, "Accuracy (%)": 0.0}
+                leaderboard[uname] = {
+                    "Username": uname, 
+                    "Total Points": 0, 
+                    "Correct Picks": 0, 
+                    "Total Predicted": 0,
+                    "Finished Predictions": 0, 
+                    "Live Accuracy (%)": 0.0
+                }
             
             match_row = matches_df[matches_df['match_id'].astype(str) == m_id]
             if not match_row.empty:
                 actual_h = match_row.iloc[0].get('actual_home_score')
                 actual_a = match_row.iloc[0].get('actual_away_score')
                 
+                # Check if the match is officially finished
                 if pd.notna(actual_h) and pd.notna(actual_a):
                     pts, is_correct = calculate_score(p_outcome, p_goals_enabled, p_home, p_away, actual_h, actual_a)
                     leaderboard[uname]["Total Points"] += pts
                     if is_correct:
                         leaderboard[uname]["Correct Picks"] += 1
+                    leaderboard[uname]["Finished Predictions"] += 1
                         
-            leaderboard[uname]["Matches Predicted"] += 1
+            leaderboard[uname]["Total Predicted"] += 1
 
         if leaderboard:
             for uname in leaderboard:
                 stats = leaderboard[uname]
-                if stats["Matches Predicted"] > 0:
-                    stats["Accuracy (%)"] = round((stats["Correct Picks"] / stats["Matches Predicted"]) * 100, 1)
+                if stats["Finished Predictions"] > 0:
+                    stats["Live Accuracy (%)"] = round((stats["Correct Picks"] / stats["Finished Predictions"]) * 100, 1)
+                else:
+                    stats["Live Accuracy (%)"] = 0.0
             
             lb_df = pd.DataFrame(list(leaderboard.values()))
-            lb_df = lb_df.sort_values(by=["Total Points", "Accuracy (%)"], ascending=[False, False])
-            lb_df["Accuracy (%)"] = lb_df["Accuracy (%)"].astype(str) + " %"
+            
+            # Select specific columns to display
+            lb_df = lb_df[["Username", "Total Points", "Correct Picks", "Total Predicted", "Live Accuracy (%)"]]
+            
+            lb_df = lb_df.sort_values(by=["Total Points", "Live Accuracy (%)"], ascending=[False, False])
+            lb_df["Live Accuracy (%)"] = lb_df["Live Accuracy (%)"].astype(str) + " %"
             
             lb_df.reset_index(drop=True, inplace=True)
             lb_df.index += 1
@@ -253,7 +267,8 @@ else:
         else:
             st.info("No predictions recorded yet.")
 
-    with tab3:
+    # --- TAB 4: RULES ---
+    with tab4:
         st.header("Tournament Rules")
         try:
             with open("data/rules.txt", "r", encoding="utf-8") as f:
