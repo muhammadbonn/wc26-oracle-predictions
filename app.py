@@ -80,7 +80,7 @@ else:
         matches_df['date_group'] = matches_df['match_time'].dt.strftime('%A - %B %d, %Y')
         
         upcoming_df = matches_df[matches_df['match_time'] > current_egypt_time].sort_values(by='match_time')
-        past_df = matches_df[matches_df['match_time'] <= current_egypt_time].sort_values(by='match_time', ascending=False)
+        past_df = matches_df[matches_df['match_time'] <= current_egypt_time].sort_values(by='match_time')
 
         # --- TAB 1: UPCOMING MATCHES ---
         with tab1:
