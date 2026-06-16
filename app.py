@@ -65,13 +65,9 @@ else:
     tab1, tab2, tab3 = st.tabs(["Matches & Predictions", "Leaderboard", "Tournament Rules"])
 
     with tab1:
-        st.header("Tournament Matches")
-        
         current_egypt_time = pd.Timestamp.now() + pd.Timedelta(hours=3)
-        
         my_preds = get_user_predictions(conn, st.session_state.username)
         
-        # FIXED: Extracting values into a standard dictionary to prevent Pandas ValueError
         pred_dict = {str(row['match_id']): {
             'predicted_outcome': row['predicted_outcome'],
             'predict_goals': row['predict_goals'],
@@ -80,40 +76,45 @@ else:
         } for _, row in my_preds.iterrows()}
 
         if not matches_df.empty:
-            matches_df = matches_df.sort_values(by='match_time')
             matches_df['round_name'] = matches_df['match_id'].apply(get_match_round)
             matches_df['date_group'] = matches_df['match_time'].dt.strftime('%A - %B %d, %Y')
             
-            first_upcoming_found = False
-            
-            for round_name, round_group in matches_df.groupby('round_name', sort=False):
-                st.markdown(f"## {round_name}")
-                for date_str, date_group in round_group.groupby('date_group', sort=False):
-                    st.markdown(f"#### {date_str}")
-                    for _, row in date_group.iterrows():
-                        match_id = str(row['match_id'])
-                        home = row['home_team'] if pd.notna(row['home_team']) else "TBD"
-                        away = row['away_team'] if pd.notna(row['away_team']) else "TBD"
-                        m_time = row['match_time']
-                        
-                        home_flag = get_team_flag(home) or "https://via.placeholder.com/80x50.png?text=Flag"
-                        away_flag = get_team_flag(away) or "https://via.placeholder.com/80x50.png?text=Flag"
-                        
-                        scoreboard_html = f"""
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background-color: #262730; border-radius: 10px; margin-bottom: 20px;">
-                            <div style="text-align: center; width: 33%;"><img src="{home_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{home}</p></div>
-                            <div style="text-align: center; width: 33%;"><p style="margin: 0; color: #888; font-size:24px; font-weight:bold;">VS</p></div>
-                            <div style="text-align: center; width: 33%;"><img src="{away_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{away}</p></div>
-                        </div>
-                        """
-                        
-                        # --- UPCOMING MATCHES (Editable) ---
-                        if current_egypt_time < m_time:
+            # Split dataframe into Upcoming and Past matches
+            upcoming_df = matches_df[matches_df['match_time'] > current_egypt_time].sort_values(by='match_time')
+            # Sort past matches descending so the most recently finished match is at the top of the past section
+            past_df = matches_df[matches_df['match_time'] <= current_egypt_time].sort_values(by='match_time', ascending=False)
+
+            # --- SECTION 1: UPCOMING MATCHES ---
+            st.header("Upcoming Matches")
+            if not upcoming_df.empty:
+                first_upcoming_found = False
+                for round_name, round_group in upcoming_df.groupby('round_name', sort=False):
+                    st.markdown(f"### {round_name}")
+                    for date_str, date_group in round_group.groupby('date_group', sort=False):
+                        st.markdown(f"#### {date_str}")
+                        for _, row in date_group.iterrows():
+                            match_id = str(row['match_id'])
+                            home = row['home_team'] if pd.notna(row['home_team']) else "TBD"
+                            away = row['away_team'] if pd.notna(row['away_team']) else "TBD"
+                            m_time = row['match_time']
+                            
+                            home_flag = get_team_flag(home) or "https://via.placeholder.com/80x50.png?text=Flag"
+                            away_flag = get_team_flag(away) or "https://via.placeholder.com/80x50.png?text=Flag"
+                            
+                            # Standard Scoreboard for upcoming (shows VS)
+                            scoreboard_html = f"""
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background-color: #262730; border-radius: 10px; margin-bottom: 20px;">
+                                <div style="text-align: center; width: 33%;"><img src="{home_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{home}</p></div>
+                                <div style="text-align: center; width: 33%;"><p style="margin: 0; color: #888; font-size:24px; font-weight:bold;">VS</p></div>
+                                <div style="text-align: center; width: 33%;"><img src="{away_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{away}</p></div>
+                            </div>
+                            """
+                            
                             is_first = not first_upcoming_found
                             if is_first:
                                 first_upcoming_found = True
                                 
-                            with st.expander(f"🟢 {home} vs {away} ({m_time.strftime('%H:%M')}) - Upcoming", expanded=is_first):
+                            with st.expander(f"[Upcoming] {home} vs {away} ({m_time.strftime('%H:%M')})", expanded=is_first):
                                 st.markdown(scoreboard_html, unsafe_allow_html=True)
                                 
                                 outcome_options = [f"{home} Win", "Draw", f"{away} Win"]
@@ -139,32 +140,73 @@ else:
                                     save_user_prediction(conn, st.session_state.username, match_id, predicted_outcome, predict_goals, pred_home, pred_away)
                                     st.success("Prediction saved securely.")
                                     st.rerun()
-                                    
-                        # --- PAST MATCHES (Locked & Read-Only) ---
-                        else:
-                            with st.expander(f"🔒 {home} vs {away} ({m_time.strftime('%H:%M')}) - Locked", expanded=False):
+            else:
+                st.info("No upcoming matches available.")
+
+            st.markdown("---")
+            
+            # --- SECTION 2: PAST MATCHES ---
+            st.header("Past Matches & Results")
+            if not past_df.empty:
+                for round_name, round_group in past_df.groupby('round_name', sort=False):
+                    st.markdown(f"### {round_name}")
+                    for date_str, date_group in round_group.groupby('date_group', sort=False):
+                        st.markdown(f"#### {date_str}")
+                        for _, row in date_group.iterrows():
+                            match_id = str(row['match_id'])
+                            home = row['home_team'] if pd.notna(row['home_team']) else "TBD"
+                            away = row['away_team'] if pd.notna(row['away_team']) else "TBD"
+                            m_time = row['match_time']
+                            
+                            home_flag = get_team_flag(home) or "https://via.placeholder.com/80x50.png?text=Flag"
+                            away_flag = get_team_flag(away) or "https://via.placeholder.com/80x50.png?text=Flag"
+                            
+                            actual_h = row.get('actual_home_score')
+                            actual_a = row.get('actual_away_score')
+                            
+                            # Dynamic middle section for Scoreboard
+                            if pd.notna(actual_h) and pd.notna(actual_a):
+                                mid_html = f'<p style="margin: 0; color: #4CAF50; font-size:36px; font-weight:900;">{int(actual_h)} - {int(actual_a)}</p>'
+                            else:
+                                mid_html = '<p style="margin: 0; color: #FFA500; font-size:24px; font-weight:bold;">TBD</p>'
+                            
+                            scoreboard_html = f"""
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background-color: #262730; border-radius: 10px; margin-bottom: 20px;">
+                                <div style="text-align: center; width: 33%;"><img src="{home_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{home}</p></div>
+                                <div style="text-align: center; width: 33%;">{mid_html}</div>
+                                <div style="text-align: center; width: 33%;"><img src="{away_flag}" width="60" style="border-radius: 5px;"><p style="margin: 10px 0 0; color: white; font-weight:bold;">{away}</p></div>
+                            </div>
+                            """
+                            
+                            with st.expander(f"[Locked] {home} vs {away} ({m_time.strftime('%H:%M')})", expanded=False):
                                 st.markdown(scoreboard_html, unsafe_allow_html=True)
                                 
                                 saved_data = pred_dict.get(match_id)
-                                if saved_data:
-                                    po = saved_data.get('predicted_outcome')
-                                    po_text = f"{home} Win" if po == 'home' else f"{away} Win" if po == 'away' else "Draw"
-                                    st.info(f"**Your Locked Pick:** {po_text}")
-                                    
-                                    if saved_data.get('predict_goals'):
-                                        st.info(f"**Your Locked Score:** {home} {int(saved_data.get('home_score', 0))} - {int(saved_data.get('away_score', 0))} {away}")
+                                
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    st.markdown("**Your Prediction:**")
+                                    if saved_data:
+                                        po = saved_data.get('predicted_outcome')
+                                        po_text = f"{home} Win" if po == 'home' else f"{away} Win" if po == 'away' else "Draw"
+                                        st.info(f"Outcome: {po_text}")
                                         
-                                    actual_h = row.get('actual_home_score')
-                                    actual_a = row.get('actual_away_score')
-                                    
-                                    if pd.notna(actual_h) and pd.notna(actual_a):
-                                        pts, _ = calculate_score(po, saved_data.get('predict_goals'), saved_data.get('home_score'), saved_data.get('away_score'), actual_h, actual_a)
-                                        st.success(f"**Official Result:** {home} {int(actual_h)} - {int(actual_a)} {away}")
-                                        st.metric("Points Earned", f"+{pts}")
+                                        if saved_data.get('predict_goals'):
+                                            st.info(f"Score: {int(saved_data.get('home_score', 0))} - {int(saved_data.get('away_score', 0))}")
                                     else:
-                                        st.warning("Match time has passed. Waiting for official results to be updated...")
-                                else:
-                                    st.write("*You did not submit a prediction for this match.*")
+                                        st.warning("No prediction submitted.")
+                                        
+                                with col2:
+                                    st.markdown("**Points Earned:**")
+                                    if saved_data:
+                                        if pd.notna(actual_h) and pd.notna(actual_a):
+                                            pts, _ = calculate_score(po, saved_data.get('predict_goals'), saved_data.get('home_score'), saved_data.get('away_score'), actual_h, actual_a)
+                                            st.success(f"+{pts} Points")
+                                        else:
+                                            st.warning("Waiting for official results...")
+                                    else:
+                                        st.error("0 Points")
 
     with tab2:
         st.header("Leaderboard Standings")
@@ -203,7 +245,6 @@ else:
             
             lb_df = pd.DataFrame(list(leaderboard.values()))
             lb_df = lb_df.sort_values(by=["Total Points", "Accuracy (%)"], ascending=[False, False])
-            
             lb_df["Accuracy (%)"] = lb_df["Accuracy (%)"].astype(str) + " %"
             
             lb_df.reset_index(drop=True, inplace=True)
