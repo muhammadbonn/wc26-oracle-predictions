@@ -83,12 +83,10 @@ def render_history_tab(past_df, pred_dict):
                         st.warning("No prediction submitted for this match.")
 
 
-def render_leaderboard_tab(all_preds, matches_df):
+def render_leaderboard_tab(all_preds, matches_df, past_df):
     st.header("Leaderboard Standings")
-    if all_preds.empty:
-        st.info("No predictions recorded yet.")
-        return
-
+    
+    # Logic to calculate points and stats
     leaderboard = {}
     for _, pred in all_preds.iterrows():
         uname = pred['username']
@@ -97,7 +95,7 @@ def render_leaderboard_tab(all_preds, matches_df):
         if uname not in leaderboard:
             leaderboard[uname] = {
                 "Username": uname, "Total Points": 0, "Correct Picks": 0, 
-                "Total Predicted": 0, "Finished Predictions": 0, "Live Accuracy (%)": 0.0
+                "Finished Predictions": 0, "Live Accuracy (%)": 0.0
             }
         
         match_row = matches_df[matches_df['match_id'].astype(str) == m_id]
@@ -105,29 +103,37 @@ def render_leaderboard_tab(all_preds, matches_df):
             actual_h = match_row.iloc[0].get('actual_home_score')
             actual_a = match_row.iloc[0].get('actual_away_score')
             
-            if pd.notna(actual_h) and pd.notna(actual_a):
+            if pd.notna(actual_h):
                 pts, is_correct = calculate_score(
                     pred['predicted_outcome'], bool(pred['predict_goals']), 
                     pred['home_score'], pred['away_score'], actual_h, actual_a
                 )
                 leaderboard[uname]["Total Points"] += pts
-                if is_correct:
-                    leaderboard[uname]["Correct Picks"] += 1
+                if is_correct: leaderboard[uname]["Correct Picks"] += 1
                 leaderboard[uname]["Finished Predictions"] += 1
-        
-        leaderboard[uname]["Total Predicted"] += 1
 
-    # Format dataframe
+    # Format data
     lb_list = []
     for uname, stats in leaderboard.items():
         if stats["Finished Predictions"] > 0:
             stats["Live Accuracy (%)"] = round((stats["Correct Picks"] / stats["Finished Predictions"]) * 100, 1)
         lb_list.append(stats)
     
-    lb_df = pd.DataFrame(lb_list)
-    lb_df = lb_df.sort_values(by=["Total Points", "Live Accuracy (%)"], ascending=[False, False])
+    lb_df = pd.DataFrame(lb_list).sort_values(by=["Total Points", "Live Accuracy (%)"], ascending=[False, False])
     lb_df["Live Accuracy (%)"] = lb_df["Live Accuracy (%)"].astype(str) + " %"
     lb_df.reset_index(drop=True, inplace=True)
     lb_df.index += 1
     
-    st.dataframe(lb_df, use_container_width=True)
+    # Display table with Popover per user
+    for i, row in lb_df.iterrows():
+        cols = st.columns([1, 3, 2, 2])
+        cols[0].write(f"{i+1}")
+        cols[1].write(row['Username'])
+        cols[2].write(f"{row['Total Points']} pts")
+        
+        with cols[3].popover("View History"):
+            st.write(f"### {row['Username']}'s Predictions")
+            user_preds = all_preds[all_preds['username'] == row['Username']]
+            user_past_df = past_df[past_df['match_id'].astype(str).isin(user_preds['match_id'].astype(str))]
+            user_pred_dict = {str(r['match_id']): r for _, r in user_preds.iterrows()}
+            render_history_tab(user_past_df, user_pred_dict)
