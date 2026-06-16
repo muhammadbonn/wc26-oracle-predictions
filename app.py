@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 from scripts.data_provider import load_matches
-from appcomponents.auth_manager import render_auth_logic
-from appcomponents.tabs_manager import render_upcoming_tab, render_history_tab
+from components.auth_manager import render_auth_logic
+from components.tabs_manager import render_upcoming_tab, render_history_tab
 
 # Page setup
 st.set_page_config(page_title="World Cup 2026 Predictions", layout="wide")
