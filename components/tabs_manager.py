@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from scripts.utils import get_team_flag, calculate_score
 from scripts.db_predictions import save_user_prediction
-from components.ui_components import render_scoreboard
+from components.ui_components import render_scoreboardو render_history_tab
 
 def render_upcoming_tab(upcoming_df, pred_dict, conn, username):
     """Renders the Upcoming Matches tab with nested gameweek expanders."""
