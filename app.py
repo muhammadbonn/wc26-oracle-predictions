@@ -4,7 +4,9 @@ from scripts.data_provider import load_matches
 from scripts.utils import get_match_round, calculate_score
 from scripts.db_predictions import get_user_predictions, get_all_predictions
 from components.auth_manager import render_auth_logic
-from components.tabs_manager import render_upcoming_tab, render_history_tab
+from components.tab_upcoming import render_upcoming_tab
+from components.tab_history import render_history_tab
+from components.tab_leaderboard import render_leaderboard_tab
 
 # Page setup
 st.set_page_config(page_title="World Cup 2026 Predictions", layout="wide")
