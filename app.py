@@ -67,11 +67,17 @@ else:
     with tab1:
         st.header("Tournament Matches")
         
-        # Use pandas Timestamp to prevent TypeError during comparison
         current_egypt_time = pd.Timestamp.now() + pd.Timedelta(hours=3)
         
         my_preds = get_user_predictions(conn, st.session_state.username)
-        pred_dict = {str(r['match_id']): r for _, r in my_preds.iterrows()}
+        
+        # FIXED: Extracting values into a standard dictionary to prevent Pandas ValueError
+        pred_dict = {str(row['match_id']): {
+            'predicted_outcome': row['predicted_outcome'],
+            'predict_goals': row['predict_goals'],
+            'home_score': row['home_score'],
+            'away_score': row['away_score']
+        } for _, row in my_preds.iterrows()}
 
         if not matches_df.empty:
             matches_df = matches_df.sort_values(by='match_time')
@@ -153,12 +159,12 @@ else:
                                     
                                     if pd.notna(actual_h) and pd.notna(actual_a):
                                         pts, _ = calculate_score(po, saved_data.get('predict_goals'), saved_data.get('home_score'), saved_data.get('away_score'), actual_h, actual_a)
-                                        st.success(f"✅ **Official Result:** {home} {int(actual_h)} - {int(actual_a)} {away}")
+                                        st.success(f"**Official Result:** {home} {int(actual_h)} - {int(actual_a)} {away}")
                                         st.metric("Points Earned", f"+{pts}")
                                     else:
-                                        st.warning("⏳ Match time has passed. Waiting for official results to be updated...")
+                                        st.warning("Match time has passed. Waiting for official results to be updated...")
                                 else:
-                                    st.write("❌ *You did not submit a prediction for this match.*")
+                                    st.write("*You did not submit a prediction for this match.*")
 
     with tab2:
         st.header("Leaderboard Standings")
@@ -190,17 +196,14 @@ else:
             leaderboard[uname]["Matches Predicted"] += 1
 
         if leaderboard:
-            # Calculate Accuracy Percentage dynamically
             for uname in leaderboard:
                 stats = leaderboard[uname]
                 if stats["Matches Predicted"] > 0:
                     stats["Accuracy (%)"] = round((stats["Correct Picks"] / stats["Matches Predicted"]) * 100, 1)
             
             lb_df = pd.DataFrame(list(leaderboard.values()))
-            # Sort primarily by Total Points, then by Accuracy to break ties fairly
             lb_df = lb_df.sort_values(by=["Total Points", "Accuracy (%)"], ascending=[False, False])
             
-            # Format Accuracy to display with % sign
             lb_df["Accuracy (%)"] = lb_df["Accuracy (%)"].astype(str) + " %"
             
             lb_df.reset_index(drop=True, inplace=True)
