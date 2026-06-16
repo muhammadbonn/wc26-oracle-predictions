@@ -66,9 +66,7 @@ else:
         with tab2:
             render_history_tab(past_df, pred_dict)
 
-        with tab3:
-            from components.tabs_manager import render_leaderboard_tab
-            
+        with tab3:            
             all_preds = get_all_predictions(conn)
             render_leaderboard_tab(all_preds, matches_df, past_df)
                 
