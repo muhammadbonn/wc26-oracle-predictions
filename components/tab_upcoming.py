@@ -32,23 +32,31 @@ def render_upcoming_tab(upcoming_df, pred_dict, conn, username):
                         render_scoreboard(home, away, get_team_flag(home), get_team_flag(away), "VS")
                         
                         # Prediction Logic
+                        saved_data = pred_dict.get(match_id)
+                        saved_po = saved_data.get('predicted_outcome') if saved_data else None
+                        
                         outcome_options = [f"{home} Win", "Draw", f"{away} Win"]
-                        saved_po = pred_dict.get(match_id, {}).get('predicted_outcome')
                         default_idx = outcome_options.index(f"{home} Win" if saved_po == 'home' else f"{away} Win" if saved_po == 'away' else "Draw") if saved_po else 0
                         
                         outcome_label = st.radio("Select Outcome:", outcome_options, index=default_idx, horizontal=True, key=f"out_{match_id}")
                         predicted_outcome = "home" if outcome_label == f"{home} Win" else "away" if outcome_label == f"{away} Win" else "draw"
                         
-                        predict_goals = st.checkbox("Activate Advanced Score Prediction", value=bool(pred_dict.get(match_id, {}).get('predict_goals')), key=f"ch_{match_id}")
+                        saved_goals_enabled = bool(saved_data.get('predict_goals')) if saved_data else False
+                        predict_goals = st.checkbox("Activate Advanced Score Prediction", value=saved_goals_enabled, key=f"ch_{match_id}")
                         
                         pred_home, pred_away = 0, 0
                         if predict_goals:
                             col1, col2 = st.columns(2)
-                            pred_home = col1.number_input(f"{home} Goals", min_value=0, step=1, value=int(pred_dict.get(match_id, {}).get('home_score', 0)), key=f"h_{match_id}")
-                            pred_away = col2.number_input(f"{away} Goals", min_value=0, step=1, value=int(pred_dict.get(match_id, {}).get('away_score', 0)), key=f"a_{match_id}")
+                            saved_h_score = int(saved_data.get('home_score', 0)) if saved_data else 0
+                            saved_a_score = int(saved_data.get('away_score', 0)) if saved_data else 0
+                            pred_home = col1.number_input(f"{home} Goals", min_value=0, step=1, value=saved_h_score, key=f"h_{match_id}")
+                            pred_away = col2.number_input(f"{away} Goals", min_value=0, step=1, value=saved_a_score, key=f"a_{match_id}")
+                        
+                        # Dynamic Button Text
+                        button_text = "Update Prediction" if saved_data else "Save Prediction"
                         
                         # Save button
-                        if st.button("Save/Update Prediction", key=f"btn_{match_id}"):
+                        if st.button(button_text, key=f"btn_{match_id}"):
                             save_user_prediction(conn, username, match_id, predicted_outcome, predict_goals, pred_home, pred_away)
-                            st.success("Prediction saved.")
+                            st.success(f"Prediction {'updated' if saved_data else 'saved'} successfully.")
                             st.rerun()
