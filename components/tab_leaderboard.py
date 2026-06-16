@@ -11,13 +11,12 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
         st.info("No predictions recorded yet.")
         return
 
-    # 1. تجميع البيانات وحساب الإحصائيات
+    # Calculate points and stats for all users
     leaderboard = {}
     for _, pred in all_preds.iterrows():
         uname = pred['username']
         m_id = str(pred['match_id'])
         
-        # تجهيز العواميد لكل يوزر
         if uname not in leaderboard:
             leaderboard[uname] = {
                 "Username": uname, 
@@ -28,7 +27,6 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
                 "Live Accuracy (%)": 0.0
             }
         
-        # زيادة إجمالي التوقعات
         leaderboard[uname]["Total Predicted"] += 1
         
         match_row = matches_df[matches_df['match_id'].astype(str) == m_id]
@@ -36,7 +34,6 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
             actual_h = match_row.iloc[0].get('actual_home_score')
             actual_a = match_row.iloc[0].get('actual_away_score')
             
-            # لو الماتش خلص (النتيجة موجودة)
             if pd.notna(actual_h) and pd.notna(actual_a):
                 pts, is_correct = calculate_score(
                     pred['predicted_outcome'], bool(pred['predict_goals']), 
@@ -47,35 +44,24 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
                     leaderboard[uname]["Correct Picks"] += 1
                 leaderboard[uname]["Finished Predictions"] += 1
 
-    # 2. حساب الدقة (Accuracy)
     lb_list = []
     for uname, stats in leaderboard.items():
         if stats["Finished Predictions"] > 0:
             stats["Live Accuracy (%)"] = round((stats["Correct Picks"] / stats["Finished Predictions"]) * 100, 1)
         lb_list.append(stats)
     
-    # 3. إنشاء الـ DataFrame وتنسيقه
     lb_df = pd.DataFrame(lb_list)
     lb_df = lb_df.sort_values(by=["Total Points", "Live Accuracy (%)"], ascending=[False, False])
     lb_df["Live Accuracy (%)"] = lb_df["Live Accuracy (%)"].astype(str) + " %"
+    
+    columns_to_show = ["Username", "Total Points", "Correct Picks", "Total Predicted", "Finished Predictions", "Live Accuracy (%)"]
+    lb_df = lb_df[columns_to_show]
+    
     lb_df.reset_index(drop=True, inplace=True)
-    lb_df.index += 1  # عشان الترتيب يبدأ من 1 مش 0
+    lb_df.index += 1
 
-    # 4. عرض الجدول مع إجبار Streamlit على إظهار كل العواميد بالترتيب
-    st.dataframe(
-        lb_df, 
-        use_container_width=True,
-        column_order=(
-            "Username", 
-            "Total Points", 
-            "Correct Picks", 
-            "Total Predicted", 
-            "Finished Predictions", 
-            "Live Accuracy (%)"
-        )
-    )
+    st.dataframe(lb_df, use_container_width=True)
 
-    # 5. عرض جزء البحث عن مستخدم لفتح الـ History الخاص به
     st.markdown("---")
     st.subheader("Search User Predictions")
     
