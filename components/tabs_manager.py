@@ -81,3 +81,53 @@ def render_history_tab(past_df, pred_dict):
                             st.write(f"**Points Earned:** +{pts}")
                     else:
                         st.warning("No prediction submitted for this match.")
+
+
+def render_leaderboard_tab(all_preds, matches_df):
+    st.header("Leaderboard Standings")
+    if all_preds.empty:
+        st.info("No predictions recorded yet.")
+        return
+
+    leaderboard = {}
+    for _, pred in all_preds.iterrows():
+        uname = pred['username']
+        m_id = str(pred['match_id'])
+        
+        if uname not in leaderboard:
+            leaderboard[uname] = {
+                "Username": uname, "Total Points": 0, "Correct Picks": 0, 
+                "Total Predicted": 0, "Finished Predictions": 0, "Live Accuracy (%)": 0.0
+            }
+        
+        match_row = matches_df[matches_df['match_id'].astype(str) == m_id]
+        if not match_row.empty:
+            actual_h = match_row.iloc[0].get('actual_home_score')
+            actual_a = match_row.iloc[0].get('actual_away_score')
+            
+            if pd.notna(actual_h) and pd.notna(actual_a):
+                pts, is_correct = calculate_score(
+                    pred['predicted_outcome'], bool(pred['predict_goals']), 
+                    pred['home_score'], pred['away_score'], actual_h, actual_a
+                )
+                leaderboard[uname]["Total Points"] += pts
+                if is_correct:
+                    leaderboard[uname]["Correct Picks"] += 1
+                leaderboard[uname]["Finished Predictions"] += 1
+        
+        leaderboard[uname]["Total Predicted"] += 1
+
+    # Format dataframe
+    lb_list = []
+    for uname, stats in leaderboard.items():
+        if stats["Finished Predictions"] > 0:
+            stats["Live Accuracy (%)"] = round((stats["Correct Picks"] / stats["Finished Predictions"]) * 100, 1)
+        lb_list.append(stats)
+    
+    lb_df = pd.DataFrame(lb_list)
+    lb_df = lb_df.sort_values(by=["Total Points", "Live Accuracy (%)"], ascending=[False, False])
+    lb_df["Live Accuracy (%)"] = lb_df["Live Accuracy (%)"].astype(str) + " %"
+    lb_df.reset_index(drop=True, inplace=True)
+    lb_df.index += 1
+    
+    st.dataframe(lb_df, use_container_width=True)
