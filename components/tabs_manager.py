@@ -2,10 +2,9 @@ import streamlit as st
 import pandas as pd
 from scripts.utils import get_team_flag, calculate_score
 from scripts.db_predictions import save_user_prediction
-from components.ui_components import render_scoreboardو render_history_tab
+from components.ui_components import render_scoreboard
 
 def render_upcoming_tab(upcoming_df, pred_dict, conn, username):
-    """Renders the Upcoming Matches tab with nested gameweek expanders."""
     st.header("Upcoming Matches")
     if upcoming_df.empty:
         st.info("No upcoming matches available.")
@@ -13,11 +12,9 @@ def render_upcoming_tab(upcoming_df, pred_dict, conn, username):
 
     first_round = True
     for round_name, round_group in upcoming_df.groupby('round_name', sort=False):
-        # Each Gameweek is a collapsible section
         with st.expander(round_name, expanded=first_round):
             first_round = False
             first_upcoming_found = False
-            
             for date_str, date_group in round_group.groupby('date_group', sort=False):
                 st.markdown(f"#### {date_str}")
                 for _, row in date_group.iterrows():
@@ -29,10 +26,8 @@ def render_upcoming_tab(upcoming_df, pred_dict, conn, username):
                     if is_first: first_upcoming_found = True
                         
                     with st.expander(f"{home} vs {away} ({m_time.strftime('%H:%M')})", expanded=is_first):
-                        # Use the shared UI component for scoreboard
                         render_scoreboard(home, away, get_team_flag(home), get_team_flag(away), "VS")
                         
-                        # Prediction Logic
                         outcome_options = [f"{home} Win", "Draw", f"{away} Win"]
                         saved_po = pred_dict.get(match_id, {}).get('predicted_outcome')
                         default_idx = outcome_options.index(f"{home} Win" if saved_po == 'home' else f"{away} Win" if saved_po == 'away' else "Draw") if saved_po else 0
@@ -54,7 +49,6 @@ def render_upcoming_tab(upcoming_df, pred_dict, conn, username):
                             st.rerun()
 
 def render_history_tab(past_df, pred_dict):
-    """Renders the Past Matches tab with results and user points."""
     st.header("Match History")
     if past_df.empty:
         st.info("No past matches yet.")
@@ -66,12 +60,10 @@ def render_history_tab(past_df, pred_dict):
                 match_id = str(row['match_id'])
                 home, away = row['home_team'], row['away_team']
                 actual_h, actual_a = row.get('actual_home_score'), row.get('actual_away_score')
-                
                 mid_html = f'<p style="color: #4CAF50; font-size:36px; font-weight:900;">{int(actual_h)} - {int(actual_a)}</p>' if pd.notna(actual_h) else '<p style="color: #FFA500;">TBD</p>'
                 
                 with st.expander(f"{home} vs {away}"):
                     render_scoreboard(home, away, get_team_flag(home), get_team_flag(away), mid_html)
-                    
                     saved_data = pred_dict.get(match_id)
                     if saved_data:
                         po = saved_data.get('predicted_outcome')
@@ -82,37 +74,24 @@ def render_history_tab(past_df, pred_dict):
                     else:
                         st.warning("No prediction submitted for this match.")
 
-
 def render_leaderboard_tab(all_preds, matches_df, past_df):
     st.header("Leaderboard Standings")
-    
-    # Logic to calculate points and stats
     leaderboard = {}
     for _, pred in all_preds.iterrows():
         uname = pred['username']
         m_id = str(pred['match_id'])
-        
         if uname not in leaderboard:
-            leaderboard[uname] = {
-                "Username": uname, "Total Points": 0, "Correct Picks": 0, 
-                "Finished Predictions": 0, "Live Accuracy (%)": 0.0
-            }
-        
+            leaderboard[uname] = {"Username": uname, "Total Points": 0, "Correct Picks": 0, "Finished Predictions": 0, "Live Accuracy (%)": 0.0}
         match_row = matches_df[matches_df['match_id'].astype(str) == m_id]
         if not match_row.empty:
             actual_h = match_row.iloc[0].get('actual_home_score')
             actual_a = match_row.iloc[0].get('actual_away_score')
-            
             if pd.notna(actual_h):
-                pts, is_correct = calculate_score(
-                    pred['predicted_outcome'], bool(pred['predict_goals']), 
-                    pred['home_score'], pred['away_score'], actual_h, actual_a
-                )
+                pts, is_correct = calculate_score(pred['predicted_outcome'], bool(pred['predict_goals']), pred['home_score'], pred['away_score'], actual_h, actual_a)
                 leaderboard[uname]["Total Points"] += pts
                 if is_correct: leaderboard[uname]["Correct Picks"] += 1
                 leaderboard[uname]["Finished Predictions"] += 1
 
-    # Format data
     lb_list = []
     for uname, stats in leaderboard.items():
         if stats["Finished Predictions"] > 0:
@@ -124,13 +103,11 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
     lb_df.reset_index(drop=True, inplace=True)
     lb_df.index += 1
     
-    # Display table with Popover per user
     for i, row in lb_df.iterrows():
         cols = st.columns([1, 3, 2, 2])
         cols[0].write(f"{i+1}")
         cols[1].write(row['Username'])
         cols[2].write(f"{row['Total Points']} pts")
-        
         with cols[3].popover("View History"):
             st.write(f"### {row['Username']}'s Predictions")
             user_preds = all_preds[all_preds['username'] == row['Username']]
