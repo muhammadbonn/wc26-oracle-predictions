@@ -64,8 +64,13 @@ def render_history_tab(past_df, pred_dict):
                 
                 with st.expander(f"{home} vs {away}"):
                     render_scoreboard(home, away, get_team_flag(home), get_team_flag(away), mid_html)
+                    
                     saved_data = pred_dict.get(match_id)
-                    if saved_data:
+                    # التعديل هنا: التأكد من تحويل البيانات لقاموس لتفادي الـ ValueError
+                    if saved_data is not None:
+                        if isinstance(saved_data, pd.Series):
+                            saved_data = saved_data.to_dict()
+                            
                         po = saved_data.get('predicted_outcome')
                         st.write(f"**Your Prediction:** {po} | Goals: {'Yes' if saved_data.get('predict_goals') else 'No'}")
                         if pd.notna(actual_h):
@@ -82,6 +87,7 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
         m_id = str(pred['match_id'])
         if uname not in leaderboard:
             leaderboard[uname] = {"Username": uname, "Total Points": 0, "Correct Picks": 0, "Finished Predictions": 0, "Live Accuracy (%)": 0.0}
+        
         match_row = matches_df[matches_df['match_id'].astype(str) == m_id]
         if not match_row.empty:
             actual_h = match_row.iloc[0].get('actual_home_score')
@@ -98,19 +104,23 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
             stats["Live Accuracy (%)"] = round((stats["Correct Picks"] / stats["Finished Predictions"]) * 100, 1)
         lb_list.append(stats)
     
-    lb_df = pd.DataFrame(lb_list).sort_values(by=["Total Points", "Live Accuracy (%)"], ascending=[False, False])
-    lb_df["Live Accuracy (%)"] = lb_df["Live Accuracy (%)"].astype(str) + " %"
-    lb_df.reset_index(drop=True, inplace=True)
-    lb_df.index += 1
-    
-    for i, row in lb_df.iterrows():
-        cols = st.columns([1, 3, 2, 2])
-        cols[0].write(f"{i+1}")
-        cols[1].write(row['Username'])
-        cols[2].write(f"{row['Total Points']} pts")
-        with cols[3].popover("View History"):
-            st.write(f"### {row['Username']}'s Predictions")
-            user_preds = all_preds[all_preds['username'] == row['Username']]
-            user_past_df = past_df[past_df['match_id'].astype(str).isin(user_preds['match_id'].astype(str))]
-            user_pred_dict = {str(r['match_id']): r for _, r in user_preds.iterrows()}
-            render_history_tab(user_past_df, user_pred_dict)
+    lb_df = pd.DataFrame(lb_list)
+    if not lb_df.empty:
+        lb_df = lb_df.sort_values(by=["Total Points", "Live Accuracy (%)"], ascending=[False, False])
+        lb_df["Live Accuracy (%)"] = lb_df["Live Accuracy (%)"].astype(str) + " %"
+        lb_df.reset_index(drop=True, inplace=True)
+        lb_df.index += 1
+        
+        for i, row in lb_df.iterrows():
+            cols = st.columns([1, 3, 2, 2])
+            cols[0].write(f"{i+1}")
+            cols[1].write(row['Username'])
+            cols[2].write(f"{row['Total Points']} pts")
+            with cols[3].popover("View History"):
+                st.write(f"### {row['Username']}'s Predictions")
+                user_preds = all_preds[all_preds['username'] == row['Username']]
+                user_past_df = past_df[past_df['match_id'].astype(str).isin(user_preds['match_id'].astype(str))]
+                user_pred_dict = {str(r['match_id']): r for _, r in user_preds.iterrows()}
+                render_history_tab(user_past_df, user_pred_dict)
+    else:
+        st.info("No predictions recorded yet.")
