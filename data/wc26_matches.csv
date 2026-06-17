@@ -20,7 +20,7 @@ match_id,match_time,home_team,away_team,team_1_code,team_2_code,venue,actual_hom
 19,2026-06-17 04:00:00,Argentina,Algeria,J1,J2,Kansas City,3,0
 20,2026-06-17 07:00:00,Austria,Jordan,J3,J4,San Francisco Bay Area,3,1
 23,2026-06-17 20:00:00,Portugal,DR Congo,K1,K2,Houston,1,1
-22,2026-06-17 23:00:00,England,Croatia,L1,L2,Dallas,,
+22,2026-06-17 23:00:00,England,Croatia,L1,L2,Dallas,4,2
 21,2026-06-18 02:00:00,Ghana,Panama,L3,L4,Toronto,,
 24,2026-06-18 05:00:00,Uzbekistan,Colombia,K3,K4,Mexico City,,
 25,2026-06-18 19:00:00,Czech Rep.,South Africa,A4,A2,Atlanta,,
