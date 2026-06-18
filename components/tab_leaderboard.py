@@ -19,12 +19,12 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
         
         if uname not in leaderboard:
             leaderboard[uname] = {
-                "Total Points": 0,
-                "Username": uname,  
+                "Username": uname, 
+                "Total Points": 0, 
                 "Correct Picks": 0, 
+                "Total Predicted": 0, 
                 "Finished Predictions": 0, 
-                "Live Accuracy (%)": 0.0,
-                "Total Predicted": 0
+                "Live Accuracy (%)": 0.0
             }
         
         leaderboard[uname]["Total Predicted"] += 1
@@ -54,7 +54,14 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
     lb_df = lb_df.sort_values(by=["Total Points", "Live Accuracy (%)"], ascending=[False, False])
     lb_df["Live Accuracy (%)"] = lb_df["Live Accuracy (%)"].astype(str) + " %"
     
-    columns_to_show = ["Username", "Total Points", "Correct Picks", "Total Predicted", "Finished Predictions", "Live Accuracy (%)"]
+    columns_to_show = [
+        "Username", 
+        "Total Points", 
+        "Correct Picks", 
+        "Finished Predictions", 
+        "Live Accuracy (%)", 
+        "Total Predicted"
+    ]
     lb_df = lb_df[columns_to_show]
     
     lb_df.reset_index(drop=True, inplace=True)
