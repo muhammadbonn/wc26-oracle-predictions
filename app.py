@@ -55,6 +55,10 @@ else:
 
     if not matches_df.empty:
         matches_df['round_name'] = matches_df['match_id'].apply(get_match_round)
+        
+        # --- التعديل هنا: منع اختفاء الماتشات ذات الـ ID غير المعرف ---
+        matches_df['round_name'] = matches_df['round_name'].fillna("Other Matches")
+        
         matches_df['date_group'] = matches_df['match_time'].dt.strftime('%A - %B %d, %Y')
         
         upcoming_df = matches_df[matches_df['match_time'] > current_egypt_time].sort_values(by='match_time')
