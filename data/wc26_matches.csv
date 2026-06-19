@@ -26,7 +26,7 @@ match_id,match_time,home_team,away_team,team_1_code,team_2_code,venue,actual_hom
 25,2026-06-18 19:00:00,Czech Rep.,South Africa,A4,A2,Atlanta,1,1
 26,2026-06-18 22:00:00,Switzerland,Bosnia/Herzeg.,B4,B2,Los Angeles,4,1
 27,2026-06-19 01:00:00,Canada,Qatar,B1,B3,Vancouver,6,0
-28,2026-06-19 04:00:00,Mexico,Rep. of Korea,A1,A3,Guadalajara,,
+28,2026-06-19 04:00:00,Mexico,Rep. of Korea,A1,A3,Guadalajara,1,0
 32,2026-06-19 22:00:00,USA,Australia,D1,D3,Seattle,,
 30,2026-06-20 01:00:00,Scotland,Morocco,C4,C2,Boston,,
 29,2026-06-20 03:30:00,Brazil,Haiti,C1,C3,Philadelphia,,
