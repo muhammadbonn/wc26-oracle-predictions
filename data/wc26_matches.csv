@@ -45,14 +45,14 @@ match_id,match_time,home_team,away_team,team_1_code,team_2_code,venue,actual_hom
 44,2026-06-23 06:00:00,Jordan,Algeria,J4,J2,San Francisco Bay Area,1,2
 47,2026-06-23 20:00:00,Portugal,Uzbekistan,K1,K3,Houston,5,0
 45,2026-06-23 23:00:00,England,Ghana,L1,L3,Boston,0,0
-46,2026-06-24 02:00:00,Panama,Croatia,L4,L2,Toronto,,
-48,2026-06-24 05:00:00,Colombia,DR Congo,K4,K2,Guadalajara,,
-51,2026-06-24 22:00:00,Switzerland,Canada,B4,B1,Vancouver,,
-52,2026-06-24 22:00:00,Bosnia/Herzeg.,Qatar,B2,B3,Seattle,,
-49,2026-06-25 01:00:00,Scotland,Brazil,C4,C1,Miami,,
-50,2026-06-25 01:00:00,Morocco,Haiti,C2,C3,Atlanta,,
-53,2026-06-25 04:00:00,Czech Rep.,Mexico,A4,A1,Mexico City,,
-54,2026-06-25 04:00:00,South Africa,Rep. of Korea,A2,A3,Monterrey,,
+46,2026-06-24 02:00:00,Panama,Croatia,L4,L2,Toronto,0,1
+48,2026-06-24 05:00:00,Colombia,DR Congo,K4,K2,Guadalajara,1,0
+51,2026-06-24 22:00:00,Switzerland,Canada,B4,B1,Vancouver,2,1
+52,2026-06-24 22:00:00,Bosnia/Herzeg.,Qatar,B2,B3,Seattle,3,1
+49,2026-06-25 01:00:00,Scotland,Brazil,C4,C1,Miami,0,3
+50,2026-06-25 01:00:00,Morocco,Haiti,C2,C3,Atlanta,4,2
+53,2026-06-25 04:00:00,Czech Rep.,Mexico,A4,A1,Mexico City,0,3
+54,2026-06-25 04:00:00,South Africa,Rep. of Korea,A2,A3,Monterrey,1,0
 55,2026-06-25 23:00:00,Curaçao,Ivory Coast,E2,E3,Philadelphia,,
 56,2026-06-25 23:00:00,Ecuador,Germany,E4,E1,New York/New Jersey,,
 57,2026-06-26 02:00:00,Japan,Sweden,F2,F3,Dallas,,
