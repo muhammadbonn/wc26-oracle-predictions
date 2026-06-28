@@ -35,10 +35,16 @@ def render_upcoming_tab(upcoming_df, pred_dict, conn, username):
                         saved_data = pred_dict.get(match_id)
                         saved_po = saved_data.get('predicted_outcome') if saved_data else None
                         
-                        outcome_options = [f"{home} Win", "Draw", f"{away} Win"]
-                        default_idx = outcome_options.index(f"{home} Win" if saved_po == 'home' else f"{away} Win" if saved_po == 'away' else "Draw") if saved_po else 0
+                        # Change 'Draw' label to 'Draw & Penalties' for matches after group stage (match_id > 72)
+                        draw_label = "Draw & Penalties" if int(match_id) > 72 else "Draw"
+                        outcome_options = [f"{home} Win", draw_label, f"{away} Win"]
+                        
+                        # Set default selected index based on saved prediction
+                        default_idx = outcome_options.index(f"{home} Win" if saved_po == 'home' else f"{away} Win" if saved_po == 'away' else draw_label) if saved_po else 0
                         
                         outcome_label = st.radio("Select Outcome:", outcome_options, index=default_idx, horizontal=True, key=f"out_{match_id}")
+                        
+                        # Save it in the database as "draw" regardless of the label used
                         predicted_outcome = "home" if outcome_label == f"{home} Win" else "away" if outcome_label == f"{away} Win" else "draw"
                         
                         saved_goals_enabled = bool(saved_data.get('predict_goals')) if saved_data else False
