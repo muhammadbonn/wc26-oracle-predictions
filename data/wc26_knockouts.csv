@@ -1,3 +1,4 @@
+match_id,match_time,home_team,away_team,team_1_code,team_2_code,venue,actual_home_score,actual_away_score,,has_penalties,actual_home_penalties,actual_away_penalties
 73,2026-06-28 22:00:00,South Africa,Canada,2A,2B,Los Angeles,,,FALSE,,
 76,2026-06-29 20:00:00,Brazil,Japan,1C,2F,Houston,,,FALSE,,
 74,2026-06-29 23:30:00,Germany,Paraguay,1E,3-ABCDF,Boston,,,FALSE,,
