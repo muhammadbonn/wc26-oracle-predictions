@@ -32,10 +32,11 @@ def render_history_tab(past_df, pred_dict, show_header=True):
                     saved_data = pred_dict.get(match_id)
                     st.markdown("### Your Prediction Summary")
                     
-                    if saved_data:
-                        # Ensure data format
-                        if isinstance(saved_data, pd.Series): saved_data = saved_data.to_dict()
-                        
+                    # Safe check for saved_data
+                    if saved_data is not None and (isinstance(saved_data, dict) or len(saved_data) > 0):
+                        if isinstance(saved_data, pd.Series): 
+                            saved_data = saved_data.to_dict()
+                            
                         # 1. Display Predicted Outcome
                         po = saved_data.get('predicted_outcome')
                         is_pens = saved_data.get('predict_penalties', False)
@@ -59,12 +60,18 @@ def render_history_tab(past_df, pred_dict, show_header=True):
                             
                         # 3. Calculate and display Points
                         if pd.notna(actual_h):
-                            # Note: Ensure calculate_score in utils.py matches the latest logic arguments
                             pts = calculate_score(
-                                po, saved_data.get('predict_goals'), 
-                                saved_data.get('home_score'), saved_data.get('away_score'),
-                                saved_data.get('predict_penalties'), saved_data.get('home_penalties_score'), saved_data.get('away_penalties_score'),
-                                actual_h, actual_a, row.get('actual_penalties'), row.get('actual_hp'), row.get('actual_ap'),
+                                po, 
+                                saved_data.get('predict_goals', False), 
+                                saved_data.get('home_score', 0), 
+                                saved_data.get('away_score', 0),
+                                saved_data.get('predict_penalties', False), 
+                                saved_data.get('home_penalties_score', 0), 
+                                saved_data.get('away_penalties_score', 0),
+                                actual_h, actual_a, 
+                                row.get('actual_penalties', False), 
+                                row.get('actual_hp', 0), 
+                                row.get('actual_ap', 0),
                                 is_knockout
                             )
                             st.success(f"**Points Earned:** +{pts}")
