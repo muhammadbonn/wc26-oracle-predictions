@@ -41,7 +41,7 @@ else:
 
     st.info("Note: All match times and dates are displayed in Egypt Standard Time.")
     
-    # 5 distinct tabs (Added Second Chance)
+    # 5 distinct tabs
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "Upcoming Matches", 
         "Match History", 
@@ -53,11 +53,16 @@ else:
     # Prepare data
     current_egypt_time = pd.Timestamp.now() + pd.Timedelta(hours=3)
     my_preds = get_user_predictions(conn, st.session_state.username)
+    
+    # Updated dictionary to include penalty shootout fields
     pred_dict = {str(row['match_id']): {
         'predicted_outcome': row['predicted_outcome'],
         'predict_goals': row['predict_goals'],
         'home_score': row['home_score'],
-        'away_score': row['away_score']
+        'away_score': row['away_score'],
+        'predict_penalties': row.get('predict_penalties', False),
+        'home_penalties_score': row.get('home_penalties_score', 0),
+        'away_penalties_score': row.get('away_penalties_score', 0)
     } for _, row in my_preds.iterrows()}
 
     if not matches_df.empty:
@@ -82,7 +87,7 @@ else:
             render_leaderboard_tab(all_preds, matches_df, past_df)
             
         with tab4:
-            # Reusing all_preds from tab3 to avoid hitting the database twice
+            all_preds = get_all_predictions(conn)
             render_second_chance_tab(all_preds, matches_df, past_df)
                 
         with tab5:
