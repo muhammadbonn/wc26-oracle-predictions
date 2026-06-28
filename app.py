@@ -7,6 +7,7 @@ from components.auth_manager import render_auth_logic
 from components.tab_upcoming import render_upcoming_tab
 from components.tab_history import render_history_tab
 from components.tab_leaderboard import render_leaderboard_tab
+from components.tab_second_chance import render_second_chance_tab
 
 # Page setup
 st.set_page_config(page_title="World Cup 2026 Predictions", layout="wide")
@@ -40,8 +41,14 @@ else:
 
     st.info("Note: All match times and dates are displayed in Egypt Standard Time.")
     
-    # 4 distinct tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["Upcoming Matches", "Match History", "Leaderboard", "Tournament Rules"])
+    # 5 distinct tabs (Added Second Chance)
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "Upcoming Matches", 
+        "Match History", 
+        "Leaderboard", 
+        "Second Chance", 
+        "Tournament Rules"
+    ])
 
     # Prepare data
     current_egypt_time = pd.Timestamp.now() + pd.Timedelta(hours=3)
@@ -55,6 +62,10 @@ else:
 
     if not matches_df.empty:
         matches_df['round_name'] = matches_df['match_id'].apply(get_match_round)
+        
+        # Fallback for unmapped match_ids to prevent UI disappearance
+        matches_df['round_name'] = matches_df['round_name'].fillna("Other Matches")
+        
         matches_df['date_group'] = matches_df['match_time'].dt.strftime('%A - %B %d, %Y')
         
         upcoming_df = matches_df[matches_df['match_time'] > current_egypt_time].sort_values(by='match_time')
@@ -69,8 +80,12 @@ else:
         with tab3:            
             all_preds = get_all_predictions(conn)
             render_leaderboard_tab(all_preds, matches_df, past_df)
-                
+            
         with tab4:
+            # Reusing all_preds from tab3 to avoid hitting the database twice
+            render_second_chance_tab(all_preds, matches_df, past_df)
+                
+        with tab5:
             st.header("Tournament Rules")
             try:
                 with open("data/rules.txt", "r", encoding="utf-8") as f:
