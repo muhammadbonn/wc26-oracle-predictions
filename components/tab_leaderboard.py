@@ -11,7 +11,7 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
         st.info("No predictions recorded yet.")
         return
 
-    # Initialize leaderboard dictionary
+    # Calculate points and stats for all users
     leaderboard = {}
     for _, pred in all_preds.iterrows():
         uname = pred['username']
@@ -29,19 +29,17 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
         
         leaderboard[uname]["Total Predicted"] += 1
         
-        # Match data from the official matches dataframe
         match_row = matches_df[matches_df['match_id'].astype(str) == m_id]
         if not match_row.empty:
             match_data = match_row.iloc[0]
             actual_h = match_data.get('actual_home_score')
             actual_a = match_data.get('actual_away_score')
             
-            # Check if match is finished
             if pd.notna(actual_h) and pd.notna(actual_a):
                 # Determine if it's a knockout stage
                 is_knockout = "Group" not in str(match_data.get('round_name', ''))
                 
-                # Calculate points using the updated signature
+                # Calculate points using the full 13-parameter logic
                 pts = calculate_score(
                     pred['predicted_outcome'], 
                     bool(pred['predict_goals']), 
@@ -50,8 +48,7 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
                     pred.get('predict_penalties', False),
                     pred.get('home_penalties_score', 0),
                     pred.get('away_penalties_score', 0),
-                    actual_h, 
-                    actual_a,
+                    actual_h, actual_a,
                     match_data.get('actual_penalties', False),
                     match_data.get('actual_hp', 0),
                     match_data.get('actual_ap', 0),
@@ -59,7 +56,7 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
                 )
                 
                 leaderboard[uname]["Total Points"] += pts
-                # Treat correct outcome as pts > 0 for accuracy logic
+                # Treat correct pick as points > 0
                 if pts > 0: 
                     leaderboard[uname]["Correct Picks"] += 1
                 leaderboard[uname]["Finished Predictions"] += 1
@@ -92,6 +89,7 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
             with st.expander(f"View {selected_user}'s History"):
                 user_preds = all_preds[all_preds['username'] == selected_user]
                 user_past_df = past_df[past_df['match_id'].astype(str).isin(user_preds['match_id'].astype(str))]
+                
                 # Convert user predictions to dictionary
                 user_pred_dict = {str(r['match_id']): r.to_dict() for _, r in user_preds.iterrows()}
                 
