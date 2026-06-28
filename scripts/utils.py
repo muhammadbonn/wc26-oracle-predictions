@@ -46,3 +46,19 @@ def calculate_score(pred_outcome, predict_goals, pred_home, pred_away, actual_ho
         if h_corr and a_corr: points += 5
         else: points += (2 if h_corr else -1) + (2 if a_corr else -1)
     return points, outcome_correct
+
+def get_match_round(match_id):
+    try:
+        m_id = int(match_id)
+        if 1 <= m_id <= 24: return "Matchday 1"
+        if 25 <= m_id <= 48: return "Matchday 2"
+        if 49 <= m_id <= 72: return "Matchday 3"
+        if 73 <= m_id <= 88: return "Round of 32"
+        if 89 <= m_id <= 96: return "Round of 16"
+        if 97 <= m_id <= 100: return "Quarter-Finals"
+        if 101 <= m_id <= 102: return "Semi-Finals"
+        if m_id == 103: return "Third Place"
+        if m_id == 104: return "Final"
+        return "Knockouts"
+    except:
+        return "Other Matches"
