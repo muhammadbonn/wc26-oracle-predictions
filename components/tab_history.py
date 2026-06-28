@@ -36,7 +36,10 @@ def render_history_tab(past_df, pred_dict, show_header=True):
                             
                         # Format Predicted Outcome
                         po = saved_data.get('predicted_outcome')
-                        po_text = f"{home} Win" if po == 'home' else f"{away} Win" if po == 'away' else "Draw"
+                        
+                        # Change 'Draw' label to 'Draw & Penalties' for matches after group stage (match_id > 72)
+                        po_text = f"{home} Win" if po == 'home' else f"{away} Win" if po == 'away' else ("Draw & Penalties" if int(match_id) > 72 else "Draw")
+                        
                         st.write(f"**Predicted Outcome:** Yes ({po_text})")
                         
                         # Format Predicted Goals
