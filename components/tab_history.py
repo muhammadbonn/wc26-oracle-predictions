@@ -43,17 +43,15 @@ def render_history_tab(past_df, pred_dict, show_header=True):
                         
                         winner_name = home if po == 'home' else away
                         res_text = f"{winner_name} Win"
-                        
-                        if is_knockout and is_pens:
-                            res_text += " (via Penalties)"
-                        elif not is_knockout and po == 'draw':
+                        if not is_knockout and po == 'draw':
                             res_text = "Draw"
                         
                         st.write(f"**Predicted Winner:** {res_text}")
                         
-                        # Display Penalty Prediction status specifically
+                        # Display Penalty Prediction status with indentation
                         if is_knockout:
-                            st.write(f"**Predicted Penalties:** {'Yes' if is_pens else 'No'}")
+                            penalty_status = "Yes" if is_pens else "No"
+                            st.write(f"&nbsp;&nbsp;&nbsp;&nbsp;↳ **Predicted to end with penalties:** {penalty_status}")
                         
                         # 2. Display Advanced Score Prediction
                         if saved_data.get('predict_goals'):
