@@ -65,26 +65,26 @@ match_id,match_time,home_team,away_team,team_1_code,team_2_code,venue,actual_hom
 66,2026-06-27 03:00:00,Uruguay,Spain,H4,H1,Guadalajara,0,1
 63,2026-06-27 06:00:00,Egypt,IR Iran,G2,G3,Seattle,1,1
 64,2026-06-27 06:00:00,New Zealand,Belgium,G4,G1,Vancouver,0,1
-67,2026-06-28 00:00:00,Panama,England,L4,L1,New York/New Jersey,,
-68,2026-06-28 00:00:00,Croatia,Ghana,L2,L3,Philadelphia,,
-71,2026-06-28 02:30:00,Colombia,Portugal,K4,K1,Miami,,
-72,2026-06-28 02:30:00,DR Congo,Uzbekistan,K2,K3,Atlanta,,
-69,2026-06-28 05:00:00,Algeria,Austria,J2,J3,Kansas City,,
-70,2026-06-28 05:00:00,Jordan,Argentina,J4,J1,Dallas,,
+67,2026-06-28 00:00:00,Panama,England,L4,L1,New York/New Jersey,0,2
+68,2026-06-28 00:00:00,Croatia,Ghana,L2,L3,Philadelphia,2,1
+71,2026-06-28 02:30:00,Colombia,Portugal,K4,K1,Miami,0,0
+72,2026-06-28 02:30:00,DR Congo,Uzbekistan,K2,K3,Atlanta,3,1
+69,2026-06-28 05:00:00,Algeria,Austria,J2,J3,Kansas City,3,3
+70,2026-06-28 05:00:00,Jordan,Argentina,J4,J1,Dallas,1,3
 73,2026-06-28 22:00:00,South Africa,Canada,2A,2B,Los Angeles,,
 76,2026-06-29 20:00:00,Brazil,Japan,1C,2F,Houston,,
 74,2026-06-29 23:30:00,Germany,Paraguay,1E,3-ABCDF,Boston,,
 75,2026-06-30 04:00:00,Netherlands,Morocco,1F,2C,Monterrey,,
 78,2026-06-30 20:00:00,Ivory Coast,Norway,2E,2I,Dallas,,
 77,2026-07-01 00:00:00,France,Sweden,1I,3-CDFGH,New York/New Jersey,,
-79,2026-07-01 04:00:00,Mexico,,1A,3-CEFHI,Mexico City,,
-80,2026-07-01 19:00:00,,,1L,3-EHIJK,Atlanta,,
-82,2026-07-01 23:00:00,,,1G,3-AEHIJ,Seattle,,
+79,2026-07-01 04:00:00,Mexico,Ecuador,1A,3-CEFHI,Mexico City,,
+80,2026-07-01 19:00:00,England,DR Congo,1L,3-EHIJK,Atlanta,,
+82,2026-07-01 23:00:00,Belgium,Senegal,1G,3-AEHIJ,Seattle,,
 81,2026-07-02 03:00:00,USA,Bosnia/Herzeg.,1D,3-BEFIJ,San Francisco Bay Area,,
-84,2026-07-02 22:00:00,Spain,,1H,2J,Los Angeles,,
-83,2026-07-03 02:00:00,,,2K,2L,Toronto,,
+84,2026-07-02 22:00:00,Spain,Austria,1H,2J,Los Angeles,,
+83,2026-07-03 02:00:00,Portugal,Croatia,2K,2L,Toronto,,
 85,2026-07-03 06:00:00,Switzerland,,1B,3-EFGIJ,Vancouver,,
-88,2026-07-03 21:00:00,Australia,,2D,2G,Dallas,,
+88,2026-07-03 21:00:00,Australia,Egypt,2D,2G,Dallas,,
 86,2026-07-04 01:00:00,Argentina,Cape Verde,1J,2H,Miami,,
 87,2026-07-04 04:30:00,,,1K,3-DEIJL,Kansas City,,
 90,2026-07-04 20:00:00,,,W73,W75,Houston,,
