@@ -4,7 +4,7 @@ from scripts.db_predictions import save_user_prediction
 from components.ui_components import render_scoreboard
 
 def render_upcoming_tab(upcoming_df, pred_dict, conn, username):
-    """Renders the Upcoming Matches tab with nested gameweek expanders."""
+    """Renders the Upcoming Matches tab with simplified knockout options."""
     st.header("Upcoming Matches")
     if upcoming_df.empty:
         st.info("No upcoming matches available.")
@@ -12,7 +12,8 @@ def render_upcoming_tab(upcoming_df, pred_dict, conn, username):
 
     first_round = True
     for round_name, round_group in upcoming_df.groupby('round_name', sort=False):
-        # Each Gameweek is a collapsible section
+        is_knockout = "Group" not in str(round_name)
+        
         with st.expander(round_name, expanded=first_round):
             first_round = False
             first_upcoming_found = False
@@ -28,41 +29,50 @@ def render_upcoming_tab(upcoming_df, pred_dict, conn, username):
                     if is_first: first_upcoming_found = True
                         
                     with st.expander(f"{home} vs {away} ({m_time.strftime('%H:%M')})", expanded=is_first):
-                        # Use the shared UI component for scoreboard
                         render_scoreboard(home, away, get_team_flag(home), get_team_flag(away), "VS")
                         
-                        # Prediction Logic
                         saved_data = pred_dict.get(match_id)
                         saved_po = saved_data.get('predicted_outcome') if saved_data else None
                         
-                        # Change 'Draw' label to 'Draw & Penalties' for matches after group stage (match_id > 72)
-                        draw_label = "Draw & Penalties" if int(match_id) > 72 else "Draw"
-                        outcome_options = [f"{home} Win", draw_label, f"{away} Win"]
-                        
-                        # Set default selected index based on saved prediction
-                        default_idx = outcome_options.index(f"{home} Win" if saved_po == 'home' else f"{away} Win" if saved_po == 'away' else draw_label) if saved_po else 0
+                        # Simple UI: Team Win or Penalties
+                        if is_knockout:
+                            outcome_options = [f"{home} Win", f"{away} Win", f"{home} Win (Pens)", f"{away} Win (Pens)"]
+                            # Logic to map back to db
+                            default_po = "home" if saved_po == 'home' and not saved_data.get('predict_penalties') else \
+                                         "away" if saved_po == 'away' and not saved_data.get('predict_penalties') else \
+                                         "home" if saved_po == 'home' and saved_data.get('predict_penalties') else "away"
+                            default_idx = outcome_options.index(f"{home} Win (Pens)") if (saved_po == 'home' and saved_data.get('predict_penalties')) else \
+                                          outcome_options.index(f"{away} Win (Pens)") if (saved_po == 'away' and saved_data.get('predict_penalties')) else \
+                                          outcome_options.index(f"{away} Win") if saved_po == 'away' else 0
+                        else:
+                            outcome_options = [f"{home} Win", "Draw", f"{away} Win"]
+                            default_idx = outcome_options.index(f"{home} Win" if saved_po == 'home' else f"{away} Win" if saved_po == 'away' else "Draw") if saved_po else 0
                         
                         outcome_label = st.radio("Select Outcome:", outcome_options, index=default_idx, horizontal=True, key=f"out_{match_id}")
                         
-                        # Save it in the database as "draw" regardless of the label used
-                        predicted_outcome = "home" if outcome_label == f"{home} Win" else "away" if outcome_label == f"{away} Win" else "draw"
+                        # Parsing selection
+                        if is_knockout:
+                            predicted_outcome = "home" if "Win" in outcome_label else "away"
+                            predict_pens = "(Pens)" in outcome_label
+                        else:
+                            predicted_outcome = "home" if outcome_label == f"{home} Win" else "away" if outcome_label == f"{away} Win" else "draw"
+                            predict_pens = False
                         
-                        saved_goals_enabled = bool(saved_data.get('predict_goals')) if saved_data else False
-                        predict_goals = st.checkbox("Activate Advanced Score Prediction", value=saved_goals_enabled, key=f"ch_{match_id}")
+                        # Advanced section
+                        predict_goals = st.checkbox("Activate Advanced Score Prediction", key=f"ch_{match_id}")
                         
-                        pred_home, pred_away = 0, 0
+                        pred_home, pred_away, pred_hp, pred_ap = 0, 0, 0, 0
                         if predict_goals:
                             col1, col2 = st.columns(2)
-                            saved_h_score = int(saved_data.get('home_score', 0)) if saved_data else 0
-                            saved_a_score = int(saved_data.get('away_score', 0)) if saved_data else 0
-                            pred_home = col1.number_input(f"{home} Goals", min_value=0, step=1, value=saved_h_score, key=f"h_{match_id}")
-                            pred_away = col2.number_input(f"{away} Goals", min_value=0, step=1, value=saved_a_score, key=f"a_{match_id}")
+                            pred_home = col1.number_input(f"{home} Goals", min_value=0, step=1, value=int(saved_data.get('home_score', 0)) if saved_data else 0, key=f"h_{match_id}")
+                            pred_away = col2.number_input(f"{away} Goals", min_value=0, step=1, value=int(saved_data.get('away_score', 0)) if saved_data else 0, key=f"a_{match_id}")
+                            
+                            if is_knockout:
+                                col3, col4 = st.columns(2)
+                                pred_hp = col3.number_input(f"{home} Pens", min_value=0, step=1, value=int(saved_data.get('home_penalties_score', 0)) if saved_data else 0, key=f"hp_{match_id}")
+                                pred_ap = col4.number_input(f"{away} Pens", min_value=0, step=1, value=int(saved_data.get('away_penalties_score', 0)) if saved_data else 0, key=f"ap_{match_id}")
                         
-                        # Dynamic Button Text
-                        button_text = "Update Prediction" if saved_data else "Save Prediction"
-                        
-                        # Save button
-                        if st.button(button_text, key=f"btn_{match_id}"):
-                            save_user_prediction(conn, username, match_id, predicted_outcome, predict_goals, pred_home, pred_away)
-                            st.success(f"Prediction {'updated' if saved_data else 'saved'} successfully.")
+                        if st.button("Save Prediction", key=f"btn_{match_id}"):
+                            save_user_prediction(conn, username, match_id, predicted_outcome, predict_goals, pred_home, pred_away, predict_pens, pred_hp, pred_ap)
+                            st.success("Prediction saved!")
                             st.rerun()
