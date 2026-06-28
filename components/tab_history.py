@@ -20,7 +20,10 @@ def render_history_tab(past_df, pred_dict, show_header=True):
                 home, away = row['home_team'], row['away_team']
                 actual_h, actual_a = row.get('actual_home_score'), row.get('actual_away_score')
                 
-                # HTML for the middle section of the scoreboard
+                # Logic to determine if it is a knockout stage
+                is_knockout = "Group" not in str(round_name)
+                
+                # HTML for the scoreboard middle section
                 mid_html = f'<p style="color: #4CAF50; font-size:36px; font-weight:900;">{int(actual_h)} - {int(actual_a)}</p>' if pd.notna(actual_h) else '<p style="color: #FFA500;">TBD</p>'
                 
                 with st.expander(f"{home} vs {away}"):
@@ -29,33 +32,43 @@ def render_history_tab(past_df, pred_dict, show_header=True):
                     saved_data = pred_dict.get(match_id)
                     st.markdown("### Your Prediction Summary")
                     
-                    if saved_data is not None:
-                        # Convert Pandas Series to dict if necessary
-                        if isinstance(saved_data, pd.Series):
-                            saved_data = saved_data.to_dict()
-                            
-                        # Format Predicted Outcome
+                    if saved_data:
+                        # Ensure data format
+                        if isinstance(saved_data, pd.Series): saved_data = saved_data.to_dict()
+                        
+                        # 1. Display Predicted Outcome
                         po = saved_data.get('predicted_outcome')
+                        is_pens = saved_data.get('predict_penalties', False)
                         
-                        # Change 'Draw' label to 'Draw & Penalties' for matches after group stage (match_id > 72)
-                        po_text = f"{home} Win" if po == 'home' else f"{away} Win" if po == 'away' else ("Draw & Penalties" if int(match_id) > 72 else "Draw")
+                        winner_name = home if po == 'home' else away
+                        res_text = f"{winner_name} Win"
+                        if is_knockout and is_pens:
+                            res_text += " (via Penalties)"
+                        elif not is_knockout and po == 'draw':
+                            res_text = "Draw"
                         
-                        st.write(f"**Predicted Outcome:** Yes ({po_text})")
+                        st.write(f"**Predicted Winner:** {res_text}")
                         
-                        # Format Predicted Goals
-                        goals_enabled = saved_data.get('predict_goals')
-                        if goals_enabled:
-                            st.write(f"**Predicted Goals:** Yes ({int(saved_data.get('home_score', 0))} - {int(saved_data.get('away_score', 0))})")
+                        # 2. Display Advanced Score Prediction
+                        if saved_data.get('predict_goals'):
+                            st.write(f"**Predicted Score:** {int(saved_data.get('home_score', 0))} - {int(saved_data.get('away_score', 0))}")
+                            if is_knockout:
+                                st.write(f"**Predicted Pens Score:** {int(saved_data.get('home_penalties_score', 0))} - {int(saved_data.get('away_penalties_score', 0))}")
                         else:
-                            st.write("**Predicted Goals:** No")
+                            st.write("**Advanced Prediction:** Not Activated")
                             
-                        # Calculate Points
+                        # 3. Calculate and display Points
                         if pd.notna(actual_h):
-                            pts, _ = calculate_score(po, goals_enabled, saved_data.get('home_score'), saved_data.get('away_score'), actual_h, actual_a)
-                            st.write(f"**Points Earned:** +{pts}")
+                            # Note: Ensure calculate_score in utils.py matches the latest logic arguments
+                            pts = calculate_score(
+                                po, saved_data.get('predict_goals'), 
+                                saved_data.get('home_score'), saved_data.get('away_score'),
+                                saved_data.get('predict_penalties'), saved_data.get('home_penalties_score'), saved_data.get('away_penalties_score'),
+                                actual_h, actual_a, row.get('actual_penalties'), row.get('actual_hp'), row.get('actual_ap'),
+                                is_knockout
+                            )
+                            st.success(f"**Points Earned:** +{pts}")
                         else:
-                            st.write("**Points Earned:** Waiting for official match results...")
+                            st.info("**Points Earned:** Waiting for official match results...")
                     else:
-                        st.write("**Predicted Outcome:** No")
-                        st.write("**Predicted Goals:** No")
-                        st.write("**Points Earned:** 0")
+                        st.warning("No prediction submitted for this match.")
