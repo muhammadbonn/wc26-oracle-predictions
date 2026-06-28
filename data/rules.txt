@@ -1,13 +1,20 @@
 ### 1. Base Match Outcome Prediction
-* **Correct Outcome (Win/Draw/Loss):** You earn **+3 points**.
-* **Incorrect Outcome:** You earn **0 points**.
+* ***Correct Outcome (Win/Draw/Loss):*** You earn ***+3 points***.
+* ***Incorrect Outcome:*** You earn ***0 points***.
+
+---
 
 ### 2. Advanced Score Prediction (Optional)
-If you check the box to predict goals, the following calculation applies:
-* **Home Team Goals Correct:** You earn **+2 points**.
-* **Home Team Goals Incorrect:** You earn **-1 point**.
-* **Away Team Goals Correct:** You earn **+2 points**.
-* **Away Team Goals Incorrect:** You earn **-1 point**.
+If you activate Advanced Score Prediction, the following applies:
+* ***Home/Away Goals Correct:*** You earn ***+2 points*** for each correctly predicted goal count.
+* ***Home/Away Goals Incorrect:*** You earn ***-1 point*** for each incorrect goal count.
+* ***Perfect Score Bonus:*** Predicting both home and away goals perfectly grants a total of ***+5 points*** (instead of 4).
 
-### Special Perfect Score Bonus
-* If you predict **both** the home and away goals perfectly correct, you receive a flat **+5 points** bonus instead of 4 points.
+---
+
+### 3. Knockout & Penalty Shootout Rules (The "Pro" Rules)
+* ***Standard Qualification:*** If you correctly predict the winning team in a knockout match, you earn ***+3 points***.
+* ***Penalty Shootout Bonus:*** If you correctly predict that the match will go to penalties, you receive ***+2 bonus points*** (Total = 5 points).
+* ***Penalty Penalty:*** If you predict a penalty shootout but the match ends in regular time, you receive ***-1 point***.
+* ***Smart Prediction:*** If you predict the wrong winner, but correctly predict that the match will go to penalties, you receive ***+1 point*** as a "consolation" for reading the match tension correctly.
+* ***Master of Penalties:*** If you predict the specific penalty score (goals for each team in the shootout) and get it ***correct***, you earn ***+3 points*** for each team. If ***incorrect***, you receive ***-1 point*** for each wrong guess.
