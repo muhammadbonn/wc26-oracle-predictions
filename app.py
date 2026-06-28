@@ -9,7 +9,7 @@ from components.tab_history import render_history_tab
 from components.tab_leaderboard import render_leaderboard_tab
 from components.tab_second_chance import render_second_chance_tab
 
-# Page setup
+# Page configuration
 st.set_page_config(page_title="World Cup 2026 Predictions", layout="wide")
 
 # Database connection
@@ -19,21 +19,25 @@ try:
 except Exception as e:
     st.error(f"Database connection error: {e}")
 
-# Load data
+# Load and process match data
 matches_df = load_matches()
 
-# State Management
+# Ensure no duplicate matches exist based on match_id
+if not matches_df.empty:
+    matches_df = matches_df.drop_duplicates(subset=['match_id'])
+
+# State Management for User Authentication
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
 
 st.title("World Cup 2026 Predictions Tournament")
 
-# Logic Flow
+# Main Application Logic Flow
 if not st.session_state.logged_in:
     render_auth_logic(conn)
 else:
-    # Sidebar
+    # Sidebar Logout functionality
     st.sidebar.write(f"Welcome, {st.session_state.username}")
     if st.sidebar.button("Log Out"):
         st.session_state.logged_in = False
@@ -41,7 +45,7 @@ else:
 
     st.info("Note: All match times and dates are displayed in Egypt Standard Time.")
     
-    # 5 distinct tabs
+    # Define the 5 main navigation tabs
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "Upcoming Matches", 
         "Match History", 
@@ -50,11 +54,11 @@ else:
         "Tournament Rules"
     ])
 
-    # Prepare data
+    # Prepare user prediction dictionary from database
     current_egypt_time = pd.Timestamp.now() + pd.Timedelta(hours=3)
     my_preds = get_user_predictions(conn, st.session_state.username)
     
-    # Updated dictionary to include penalty shootout fields
+    # Map predictions for efficient lookup in UI components
     pred_dict = {str(row['match_id']): {
         'predicted_outcome': row['predicted_outcome'],
         'predict_goals': row['predict_goals'],
@@ -66,16 +70,16 @@ else:
     } for _, row in my_preds.iterrows()}
 
     if not matches_df.empty:
+        # Determine round names and group dates for display
         matches_df['round_name'] = matches_df['match_id'].apply(get_match_round)
-        
-        # Fallback for unmapped match_ids to prevent UI disappearance
         matches_df['round_name'] = matches_df['round_name'].fillna("Other Matches")
-        
         matches_df['date_group'] = matches_df['match_time'].dt.strftime('%A - %B %d, %Y')
         
+        # Split matches into upcoming and past based on current time
         upcoming_df = matches_df[matches_df['match_time'] > current_egypt_time].sort_values(by='match_time')
         past_df = matches_df[matches_df['match_time'] <= current_egypt_time].sort_values(by='match_time')
 
+        # Rendering tabs
         with tab1:
             render_upcoming_tab(upcoming_df, pred_dict, conn, st.session_state.username)
             
