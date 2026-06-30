@@ -42,9 +42,11 @@ def render_second_chance_tab(all_preds, matches_df, past_df):
             actual_a = match_data.get('actual_away_score')
             
             if pd.notna(actual_h) and pd.notna(actual_a):
+                # Determine if it's a knockout stage and get penalty status
                 is_knockout = "Group" not in str(match_data.get('round_name', ''))
+                act_pens = match_data.get('actual_penalties', False)
                 
-                # Updated 13-parameter call
+                # Calculate points using the full 13-parameter logic
                 pts = calculate_score(
                     pred['predicted_outcome'], 
                     bool(pred['predict_goals']), 
@@ -54,17 +56,31 @@ def render_second_chance_tab(all_preds, matches_df, past_df):
                     pred.get('home_penalties_score', 0),
                     pred.get('away_penalties_score', 0),
                     actual_h, actual_a,
-                    match_data.get('actual_penalties', False),
+                    act_pens,
                     match_data.get('actual_hp', 0),
                     match_data.get('actual_ap', 0),
                     is_knockout
                 )
                 
                 leaderboard[uname]["Total Points"] += pts
-                if pts > 0: 
+                
+                # --- STRICT CORRECT PICK LOGIC ---
+                # Determine the actual winner to calculate Live Accuracy correctly
+                act_h_val, act_a_val = int(actual_h), int(actual_a)
+                if is_knockout and act_h_val == act_a_val and act_pens:
+                    act_hp = int(match_data.get('actual_hp', 0))
+                    act_ap = int(match_data.get('actual_ap', 0))
+                    actual_winner = "home" if act_hp > act_ap else "away"
+                else:
+                    actual_winner = "home" if act_h_val > act_a_val else "away" if act_a_val > act_h_val else "draw"
+                
+                # Increment Correct Picks ONLY if the predicted outcome matches the actual winner
+                if pred['predicted_outcome'] == actual_winner:
                     leaderboard[uname]["Correct Picks"] += 1
+                    
                 leaderboard[uname]["Finished Predictions"] += 1
 
+    # Format dataframe
     lb_list = []
     for uname, stats in leaderboard.items():
         if stats["Finished Predictions"] > 0:
@@ -109,7 +125,7 @@ def render_second_chance_tab(all_preds, matches_df, past_df):
                 user_preds = ko_preds[ko_preds['username'] == selected_user]
                 user_past_df = past_df[(past_df['match_id'].astype(str).isin(user_preds['match_id'].astype(str))) & (past_df['match_id'].astype(int) > 72)]
                 
-                # Added .to_dict() to prevent Truth Value ambiguous error
+                # Convert user predictions to dictionary safely
                 user_pred_dict = {str(r['match_id']): r.to_dict() for _, r in user_preds.iterrows()}
                 
                 if not user_past_df.empty:
