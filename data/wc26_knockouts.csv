@@ -3,8 +3,8 @@ match_id,match_time,home_team,away_team,team_1_code,team_2_code,venue,actual_hom
 76,2026-06-29 20:00:00,Brazil,Japan,1C,2F,Houston,2,1,FALSE,,
 74,2026-06-29 23:30:00,Germany,Paraguay,1E,3-ABCDF,Boston,1,1,TRUE,3,4
 75,2026-06-30 04:00:00,Netherlands,Morocco,1F,2C,Monterrey,1,1,TRUE,2,3
-78,2026-06-30 20:00:00,Ivory Coast,Norway,2E,2I,Dallas,,,FALSE,,
-77,2026-07-01 00:00:00,France,Sweden,1I,3-CDFGH,New York/New Jersey,,,FALSE,,
+78,2026-06-30 20:00:00,Ivory Coast,Norway,2E,2I,Dallas,1,2,FALSE,,
+77,2026-07-01 00:00:00,France,Sweden,1I,3-CDFGH,New York/New Jersey,3,0,FALSE,,
 79,2026-07-01 04:00:00,Mexico,Ecuador,1A,3-CEFHI,Mexico City,,,FALSE,,
 80,2026-07-01 19:00:00,England,DR Congo,1L,3-EHIJK,Atlanta,,,FALSE,,
 82,2026-07-01 23:00:00,Belgium,Senegal,1G,3-AEHIJ,Seattle,,,FALSE,,
