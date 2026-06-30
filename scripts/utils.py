@@ -50,7 +50,12 @@ def calculate_score(pred_outcome, predict_goals, pred_home, pred_away,
     
     points = 0
     act_h, act_a = int(actual_home), int(actual_away)
-    actual_outcome = "home" if act_h > act_a else "away" if act_a > act_h else "draw"
+    
+    # Determine the actual winner, factoring in penalty shootouts for knockout stages
+    if is_knockout and act_h == act_a and act_pens:
+        actual_outcome = "home" if int(act_hp) > int(act_ap) else "away"
+    else:
+        actual_outcome = "home" if act_h > act_a else "away" if act_a > act_h else "draw"
     
     # 1. Base Outcome Prediction
     if pred_outcome == actual_outcome:
@@ -77,7 +82,8 @@ def calculate_score(pred_outcome, predict_goals, pred_home, pred_away,
             
     # 3. Master of Penalties (Shootout Score)
     if is_knockout and act_pens:
-        points += (3 if pred_hp == act_hp else -1)
-        points += (3 if pred_ap == act_ap else -1)
+        # Ensure values are treated as integers to prevent TypeError
+        points += (3 if pred_hp == int(act_hp) else -1)
+        points += (3 if pred_ap == int(act_ap) else -1)
         
     return points
