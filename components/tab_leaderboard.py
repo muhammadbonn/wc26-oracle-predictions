@@ -36,8 +36,9 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
             actual_a = match_data.get('actual_away_score')
             
             if pd.notna(actual_h) and pd.notna(actual_a):
-                # Determine if it's a knockout stage
+                # Determine if it's a knockout stage and get penalty status
                 is_knockout = "Group" not in str(match_data.get('round_name', ''))
+                act_pens = match_data.get('actual_penalties', False)
                 
                 # Calculate points using the full 13-parameter logic
                 pts = calculate_score(
@@ -49,16 +50,28 @@ def render_leaderboard_tab(all_preds, matches_df, past_df):
                     pred.get('home_penalties_score', 0),
                     pred.get('away_penalties_score', 0),
                     actual_h, actual_a,
-                    match_data.get('actual_penalties', False),
+                    act_pens,
                     match_data.get('actual_hp', 0),
                     match_data.get('actual_ap', 0),
                     is_knockout
                 )
                 
                 leaderboard[uname]["Total Points"] += pts
-                # Treat correct pick as points > 0
-                if pts > 0: 
+                
+                # --- STRICT CORRECT PICK LOGIC ---
+                # Determine the actual winner to calculate Live Accuracy correctly
+                act_h_val, act_a_val = int(actual_h), int(actual_a)
+                if is_knockout and act_h_val == act_a_val and act_pens:
+                    act_hp = int(match_data.get('actual_hp', 0))
+                    act_ap = int(match_data.get('actual_ap', 0))
+                    actual_winner = "home" if act_hp > act_ap else "away"
+                else:
+                    actual_winner = "home" if act_h_val > act_a_val else "away" if act_a_val > act_h_val else "draw"
+                
+                # Increment Correct Picks ONLY if the predicted outcome matches the actual winner
+                if pred['predicted_outcome'] == actual_winner:
                     leaderboard[uname]["Correct Picks"] += 1
+                    
                 leaderboard[uname]["Finished Predictions"] += 1
 
     # Format dataframe
