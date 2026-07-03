@@ -11,8 +11,8 @@ match_id,match_time,home_team,away_team,team_1_code,team_2_code,venue,actual_hom
 81,2026-07-02 03:00:00,USA,Bosnia/Herzeg.,1D,3-BEFIJ,San Francisco Bay Area,2,0,FALSE,,
 84,2026-07-02 22:00:00,Spain,Austria,1H,2J,Los Angeles,3,0,FALSE,,
 83,2026-07-03 02:00:00,Portugal,Croatia,2K,2L,Toronto,2,1,FALSE,,
-85,2026-07-03 06:00:00,Switzerland,Algeria,1B,3-EFGIJ,Vancouver,,,FALSE,,
-88,2026-07-03 21:00:00,Australia,Egypt,2D,2G,Dallas,,,FALSE,,
+85,2026-07-03 06:00:00,Switzerland,Algeria,1B,3-EFGIJ,Vancouver,2,0,FALSE,,
+88,2026-07-03 21:00:00,Australia,Egypt,2D,2G,Dallas,1,1,TRUE,2,4
 86,2026-07-04 01:00:00,Argentina,Cape Verde,1J,2H,Miami,,,FALSE,,
 87,2026-07-04 04:30:00,Colombia,Ghana,1K,3-DEIJL,Kansas City,,,FALSE,,
 90,2026-07-04 20:00:00,Canada,Morocco,W73,W75,Houston,,,FALSE,,
