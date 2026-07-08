@@ -22,11 +22,11 @@ match_id,match_time,home_team,away_team,team_1_code,team_2_code,venue,actual_hom
 93,2026-07-06 22:00:00,Portugal,Spain,W83,W84,Dallas,0,1,FALSE,,
 94,2026-07-07 03:00:00,USA,Belgium,W81,W82,Seattle,1,4,FALSE,,
 95,2026-07-07 19:00:00,Argentina,Egypt,W86,W88,Atlanta,3,2,FALSE,,
-96,2026-07-07 23:00:00,Switzerland,Colombia,W85,W87,Vancouver,,,FALSE,,
+96,2026-07-07 23:00:00,Switzerland,Colombia,W85,W87,Vancouver,0,0,TRUE,4,3
 97,2026-07-09 23:00:00,France,Morocco,W89,W90,Boston,,,FALSE,,
 98,2026-07-10 22:00:00,Spain,Belgium,W93,W94,Los Angeles,,,FALSE,,
 99,2026-07-12 00:00:00,Norway,England,W91,W92,Miami,,,FALSE,,
-100,2026-07-12 04:00:00,Argentina,,W95,W96,Kansas City,,,FALSE,,
+100,2026-07-12 04:00:00,Argentina,Switzerland,W95,W96,Kansas City,,,FALSE,,
 101,2026-07-14 22:00:00,,,W97,W98,Dallas,,,FALSE,,
 102,2026-07-15 22:00:00,,,W99,W100,Atlanta,,,FALSE,,
 103,2026-07-19 00:00:00,,,RU101,RU102,Miami,,,FALSE,,
